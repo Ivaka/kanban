@@ -5,15 +5,11 @@ import * as RadixCheckbox from "@radix-ui/react-checkbox";
 import * as RadixPopover from "@radix-ui/react-popover";
 import * as RadixSelect from "@radix-ui/react-select";
 import * as RadixSwitch from "@radix-ui/react-switch";
-import { getRuntimeAgentCatalogEntry, getRuntimeLaunchSupportedAgentCatalog } from "@runtime-agent-catalog";
 import { areRuntimeProjectShortcutsEqual } from "@runtime-shortcuts";
 import {
 	Bell,
-	Bot,
 	Check,
 	ChevronDown,
-	Circle,
-	CircleDot,
 	ExternalLink,
 	FolderOpen,
 	GitCommit,
@@ -24,8 +20,6 @@ import {
 	X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AccountOrganizationSection } from "@/components/shared/account-organization-section";
-import { ClineSetupSection } from "@/components/shared/cline-setup-section";
 import {
 	getRuntimeShortcutIconComponent,
 	getRuntimeShortcutPickerOption,
@@ -43,12 +37,7 @@ import { useRuntimeSettingsClineMcpController } from "@/hooks/use-runtime-settin
 import { previewThemeId, readStoredThemeId, saveThemeId, THEME_GROUPS, THEMES, type ThemeId } from "@/hooks/use-theme";
 import { useLayoutCustomizations } from "@/resize/layout-customizations";
 import { openFileOnHost } from "@/runtime/runtime-config-query";
-import type {
-	RuntimeAgentId,
-	RuntimeClineMcpServerAuthStatus,
-	RuntimeConfigResponse,
-	RuntimeProjectShortcut,
-} from "@/runtime/types";
+import type { RuntimeClineMcpServerAuthStatus, RuntimeConfigResponse, RuntimeProjectShortcut } from "@/runtime/types";
 import { useRuntimeConfig } from "@/runtime/use-runtime-config";
 import {
 	type BrowserNotificationPermission,
@@ -58,12 +47,8 @@ import {
 import { formatPathForDisplay } from "@/utils/path-display";
 import { useUnmount, useWindowEvent } from "@/utils/react-use";
 
-interface RuntimeSettingsAgentRowModel {
-	id: RuntimeAgentId;
-	label: string;
-	binary: string;
-	command: string;
-	installed: boolean | null;
+function normalizeTemplateForComparison(value: string): string {
+	return value.replaceAll("\r\n", "\n").trim();
 }
 
 function quoteCommandPartForDisplay(part: string): string {
@@ -73,16 +58,9 @@ function quoteCommandPartForDisplay(part: string): string {
 	return JSON.stringify(part);
 }
 
-function buildDisplayedAgentCommand(agentId: RuntimeAgentId, binary: string, autonomousModeEnabled: boolean): string {
-	if (agentId === "cline") {
-		return "";
-	}
-	const args = autonomousModeEnabled ? (getRuntimeAgentCatalogEntry(agentId)?.autonomousArgs ?? []) : [];
+function buildDisplayedAgentCommand(binary: string, autonomousModeEnabled: boolean, autonomousArgs?: string[]): string {
+	const args = autonomousModeEnabled ? (autonomousArgs ?? []) : [];
 	return [binary, ...args.map(quoteCommandPartForDisplay)].join(" ");
-}
-
-function normalizeTemplateForComparison(value: string): string {
-	return value.replaceAll("\r\n", "\n").trim();
 }
 
 const GIT_PROMPT_VARIANT_OPTIONS: Array<{ value: TaskGitAction; label: string }> = [
@@ -92,18 +70,14 @@ const GIT_PROMPT_VARIANT_OPTIONS: Array<{ value: TaskGitAction; label: string }>
 
 export type RuntimeSettingsSection = "shortcuts";
 
-const SETTINGS_AGENT_ORDER: readonly RuntimeAgentId[] = ["cline", "claude", "codex", "droid", "kiro", "kimchi"];
-
 type SettingsNavId = "general" | "cline" | "git-prompts" | "notifications" | "appearance" | "project";
 
 const SETTINGS_NAV_ITEMS: ReadonlyArray<{
 	id: SettingsNavId;
 	label: string;
 	icon: React.ReactNode;
-	clineOnly?: boolean;
 }> = [
 	{ id: "general", label: "General", icon: <SlidersHorizontal size={16} /> },
-	{ id: "cline", label: "Cline", icon: <Bot size={16} />, clineOnly: true },
 	{ id: "git-prompts", label: "Git Prompts", icon: <GitCommit size={16} /> },
 	{ id: "notifications", label: "Notifications", icon: <Bell size={16} /> },
 	{ id: "appearance", label: "Appearance", icon: <Palette size={16} /> },
@@ -140,85 +114,6 @@ function getNextShortcutLabel(shortcuts: RuntimeProjectShortcut[], baseLabel: st
 		suffix += 1;
 	}
 	return `${baseLabel} ${suffix}`;
-}
-
-function AgentRow({
-	agent,
-	isSelected,
-	onSelect,
-	disabled,
-}: {
-	agent: RuntimeSettingsAgentRowModel;
-	isSelected: boolean;
-	onSelect: () => void;
-	disabled: boolean;
-}): React.ReactElement {
-	const installUrl = getRuntimeAgentCatalogEntry(agent.id)?.installUrl;
-	const isNativeCline = agent.id === "cline";
-	const isInstalled = agent.installed === true;
-	const isInstallStatusPending = !isNativeCline && agent.installed === null;
-
-	return (
-		<div
-			role="button"
-			tabIndex={0}
-			onClick={() => {
-				if (isInstalled && !disabled) {
-					onSelect();
-				}
-			}}
-			onKeyDown={(event) => {
-				if (event.key === "Enter" && isInstalled && !disabled) {
-					onSelect();
-				}
-			}}
-			className="flex items-center justify-between gap-3 py-1.5"
-			style={{ cursor: isInstalled ? "pointer" : "default" }}
-		>
-			<div className="flex items-start gap-2 min-w-0">
-				{isSelected ? (
-					<CircleDot size={16} className="text-accent mt-0.5 shrink-0" />
-				) : (
-					<Circle
-						size={16}
-						className={cn("mt-0.5 shrink-0", !isInstalled ? "text-text-tertiary" : "text-text-secondary")}
-					/>
-				)}
-				<div className="min-w-0">
-					<div className="flex items-center gap-2">
-						<span className="text-[13px] text-text-primary">{agent.label}</span>
-						{!isNativeCline && isInstalled ? (
-							<span className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium bg-status-green/10 text-status-green">
-								Installed
-							</span>
-						) : isInstallStatusPending ? (
-							<span className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium bg-surface-3 text-text-secondary">
-								Checking...
-							</span>
-						) : null}
-					</div>
-					{agent.command ? (
-						<p className="text-text-secondary font-mono text-xs mt-0.5 m-0">{agent.command}</p>
-					) : null}
-				</div>
-			</div>
-			{!isNativeCline && agent.installed === false && installUrl ? (
-				<a
-					href={installUrl}
-					target="_blank"
-					rel="noreferrer"
-					onClick={(event: React.MouseEvent) => event.stopPropagation()}
-					className="inline-flex items-center justify-center rounded-md font-medium duration-150 cursor-default select-none h-7 px-2 text-xs bg-surface-2 border border-border text-text-primary hover:bg-surface-3 hover:border-border-bright"
-				>
-					Install
-				</a>
-			) : !isNativeCline && agent.installed === false ? (
-				<Button size="sm" disabled>
-					Install
-				</Button>
-			) : null}
-		</div>
-	);
 }
 
 function InlineUtilityButton({
@@ -352,6 +247,7 @@ export function RuntimeSettingsDialog({
 	liveMcpAuthStatuses = null,
 	onOpenChange,
 	onSaved,
+	// biome-ignore lint/correctness/noUnusedFunctionParameters: No Cline here.
 	onAccountSwitched,
 	initialSection,
 }: {
@@ -364,9 +260,9 @@ export function RuntimeSettingsDialog({
 	onAccountSwitched?: () => void;
 	initialSection?: RuntimeSettingsSection | null;
 }): React.ReactElement {
+	// biome-ignore lint/correctness/noUnusedVariables: No Cline here.
 	const { config, isLoading, isSaving, save, refresh } = useRuntimeConfig(open, workspaceId, initialConfig);
 	const { resetLayoutCustomizations } = useLayoutCustomizations();
-	const [selectedAgentId, setSelectedAgentId] = useState<RuntimeAgentId>("claude");
 	const [agentAutonomousModeEnabled, setAgentAutonomousModeEnabled] = useState(true);
 	const [readyForReviewNotificationsEnabled, setReadyForReviewNotificationsEnabled] = useState(true);
 	const [initialThemeId, setInitialThemeId] = useState<ThemeId>(readStoredThemeId);
@@ -406,40 +302,9 @@ export function RuntimeSettingsDialog({
 		setNotificationPermission(getBrowserNotificationPermission());
 	}, []);
 
-	const supportedAgents = useMemo<RuntimeSettingsAgentRowModel[]>(() => {
-		const agents =
-			config?.agents.map((agent) => ({
-				id: agent.id,
-				label: agent.label,
-				binary: agent.binary,
-				installed: agent.id === "cline" ? true : agent.installed,
-			})) ??
-			getRuntimeLaunchSupportedAgentCatalog().map((agent) => ({
-				id: agent.id,
-				label: agent.label,
-				binary: agent.binary,
-				installed: agent.id === "cline" ? true : null,
-			}));
-		const orderIndexByAgentId = new Map(SETTINGS_AGENT_ORDER.map((agentId, index) => [agentId, index] as const));
-		const orderedAgents = [...agents].sort((left, right) => {
-			const leftOrderIndex = orderIndexByAgentId.get(left.id) ?? Number.MAX_SAFE_INTEGER;
-			const rightOrderIndex = orderIndexByAgentId.get(right.id) ?? Number.MAX_SAFE_INTEGER;
-			return leftOrderIndex - rightOrderIndex;
-		});
-		return orderedAgents.map((agent) => ({
-			...agent,
-			command: buildDisplayedAgentCommand(agent.id, agent.binary, agentAutonomousModeEnabled),
-		}));
-	}, [agentAutonomousModeEnabled, config?.agents]);
-	const displayedAgents = useMemo(() => supportedAgents, [supportedAgents]);
-	const navItems = useMemo(
-		() => SETTINGS_NAV_ITEMS.filter((item) => !item.clineOnly || selectedAgentId === "cline"),
-		[selectedAgentId],
-	);
-	const configuredAgentId = config?.selectedAgentId ?? null;
-	const firstInstalledAgentId = displayedAgents.find((agent) => agent.installed)?.id;
-	const fallbackAgentId = firstInstalledAgentId ?? displayedAgents[0]?.id ?? "claude";
-	const initialSelectedAgentId = configuredAgentId ?? fallbackAgentId;
+	const isAgentInstalled = config?.agentConfig?.installed ?? false;
+	const agentCommand = buildDisplayedAgentCommand("kimchi", agentAutonomousModeEnabled, ["--yolo"]);
+
 	const initialAgentAutonomousModeEnabled = config?.agentAutonomousModeEnabled ?? true;
 	const initialReadyForReviewNotificationsEnabled = config?.readyForReviewNotificationsEnabled ?? true;
 	const initialShortcuts = config?.shortcuts ?? [];
@@ -448,21 +313,18 @@ export function RuntimeSettingsDialog({
 	const clineSettings = useRuntimeSettingsClineController({
 		open,
 		workspaceId,
-		selectedAgentId,
+		selectedAgentId: "cline",
 		config,
 	});
 	const clineMcpSettings = useRuntimeSettingsClineMcpController({
 		open,
 		workspaceId,
-		selectedAgentId,
+		selectedAgentId: "cline",
 		liveAuthStatuses: liveMcpAuthStatuses,
 	});
 	const hasUnsavedChanges = useMemo(() => {
 		if (!config) {
 			return false;
-		}
-		if (selectedAgentId !== initialSelectedAgentId) {
-			return true;
 		}
 		if (agentAutonomousModeEnabled !== initialAgentAutonomousModeEnabled) {
 			return true;
@@ -503,12 +365,10 @@ export function RuntimeSettingsDialog({
 		initialCommitPromptTemplate,
 		initialOpenPrPromptTemplate,
 		initialReadyForReviewNotificationsEnabled,
-		initialSelectedAgentId,
 		initialShortcuts,
 		initialThemeId,
 		openPrPromptTemplate,
 		readyForReviewNotificationsEnabled,
-		selectedAgentId,
 		shortcuts,
 	]);
 
@@ -516,7 +376,6 @@ export function RuntimeSettingsDialog({
 		if (!open) {
 			return;
 		}
-		setSelectedAgentId(configuredAgentId ?? fallbackAgentId);
 		setAgentAutonomousModeEnabled(config?.agentAutonomousModeEnabled ?? true);
 		setReadyForReviewNotificationsEnabled(config?.readyForReviewNotificationsEnabled ?? true);
 		setShortcuts(config?.shortcuts ?? []);
@@ -528,9 +387,7 @@ export function RuntimeSettingsDialog({
 		config?.commitPromptTemplate,
 		config?.openPrPromptTemplate,
 		config?.readyForReviewNotificationsEnabled,
-		config?.selectedAgentId,
 		config?.shortcuts,
-		fallbackAgentId,
 		open,
 	]);
 
@@ -587,12 +444,6 @@ export function RuntimeSettingsDialog({
 			copiedVariableResetTimerRef.current = null;
 		}
 	});
-
-	useEffect(() => {
-		if (activeSection === "cline" && selectedAgentId !== "cline") {
-			setActiveSection("general");
-		}
-	}, [activeSection, selectedAgentId]);
 
 	const handleBodyScroll = useCallback(() => {
 		if (isScrollingProgrammatically.current) return;
@@ -668,9 +519,8 @@ export function RuntimeSettingsDialog({
 			setSaveError("Runtime settings are still loading. Try again in a moment.");
 			return;
 		}
-		const selectedAgent = displayedAgents.find((agent) => agent.id === selectedAgentId);
-		if (!selectedAgent || selectedAgent.installed !== true) {
-			setSaveError("Selected agent is not installed. Install it first or choose an installed agent.");
+		if (!isAgentInstalled) {
+			setSaveError("Kimchi agent is not installed. Install it first.");
 			return;
 		}
 		const shouldRequestNotificationPermission =
@@ -681,24 +531,18 @@ export function RuntimeSettingsDialog({
 			const nextPermission = await requestBrowserNotificationPermission();
 			setNotificationPermission(nextPermission);
 		}
-		if (selectedAgentId === "cline" && clineSettings.providerId.trim().length === 0) {
-			setSaveError("Choose a Cline provider before saving.");
+		const clineProviderSaveResult = await clineSettings.saveProviderSettings();
+		if (!clineProviderSaveResult.ok) {
+			setSaveError(clineProviderSaveResult.message ?? "Could not save model settings.");
 			return;
 		}
-		if (selectedAgentId === "cline") {
-			const clineProviderSaveResult = await clineSettings.saveProviderSettings();
-			if (!clineProviderSaveResult.ok) {
-				setSaveError(clineProviderSaveResult.message ?? "Could not save Cline provider settings.");
-				return;
-			}
-			const clineMcpSaveResult = await clineMcpSettings.saveMcpSettings();
-			if (!clineMcpSaveResult.ok) {
-				setSaveError(clineMcpSaveResult.message ?? "Could not save Cline MCP settings.");
-				return;
-			}
+		const clineMcpSaveResult = await clineMcpSettings.saveMcpSettings();
+		if (!clineMcpSaveResult.ok) {
+			setSaveError(clineMcpSaveResult.message ?? "Could not save MCP settings.");
+			return;
 		}
 		const saved = await save({
-			selectedAgentId,
+			selectedAgentId: "kimchi",
 			agentAutonomousModeEnabled,
 			readyForReviewNotificationsEnabled,
 			shortcuts,
@@ -735,10 +579,10 @@ export function RuntimeSettingsDialog({
 		[workspaceId],
 	);
 
-	const handleClineSetupSaved = useCallback(() => {
-		refresh();
-		onSaved?.();
-	}, [onSaved, refresh]);
+	// const handleKimchiSetupSaved = useCallback(() => {
+	// 	refresh();
+	// 	onSaved?.();
+	// }, [onSaved, refresh]);
 
 	const handleDialogOpenChange = useCallback(
 		(nextOpen: boolean) => {
@@ -761,7 +605,7 @@ export function RuntimeSettingsDialog({
 		<Dialog open={open} onOpenChange={handleDialogOpenChange} contentClassName="!max-w-[780px]">
 			<DialogHeader title="Settings" icon={<Settings size={16} />} />
 			<div className="flex h-[min(480px,60vh)]">
-				<SettingsNav items={navItems} activeId={activeSection} onSelect={handleNavSelect} />
+				<SettingsNav items={SETTINGS_NAV_ITEMS} activeId={activeSection} onSelect={handleNavSelect} />
 				<div
 					ref={bodyRef}
 					onScroll={handleBodyScroll}
@@ -776,20 +620,22 @@ export function RuntimeSettingsDialog({
 						</h2>
 					</div>
 					<div className="rounded-lg border border-border bg-surface-0 px-4 py-3 mb-4">
-						<h6 className="text-[12px] font-semibold uppercase tracking-wider text-text-secondary m-0 mb-1">
-							Agent
-						</h6>
-						{displayedAgents.map((agent) => (
-							<AgentRow
-								key={agent.id}
-								agent={agent}
-								isSelected={agent.id === selectedAgentId}
-								onSelect={() => setSelectedAgentId(agent.id)}
-								disabled={controlsDisabled}
-							/>
-						))}
-						{config === null ? (
-							<p className="text-text-secondary py-2">Checking which CLIs are installed for this project...</p>
+						<div className="flex items-center gap-2 mb-1">
+							<h6 className="text-[12px] font-semibold uppercase tracking-wider text-text-secondary m-0">
+								Agent
+							</h6>
+							{isAgentInstalled ? (
+								<span className="flex items-center gap-2">
+									<span className="inline-block h-2 w-2 rounded-full bg-status-green" />
+								</span>
+							) : (
+								<span className="flex items-center gap-2">
+									<span className="inline-block h-2 w-2 rounded-full bg-status-red" />
+								</span>
+							)}
+						</div>
+						{agentCommand ? (
+							<p className="text-text-secondary font-mono text-xs mt-0.5 m-0">{agentCommand}</p>
 						) : null}
 						<label
 							htmlFor={bypassPermissionsCheckboxId}
@@ -809,42 +655,25 @@ export function RuntimeSettingsDialog({
 							</RadixCheckbox.Root>
 							<span>Enable bypass permissions flag</span>
 						</label>
-						<p className="text-text-secondary text-[13px] ml-6 mt-0 mb-0">
-							Allows agents to use tools without stopping for permission. Use at your own risk.
+						<p className="text-text-secondary text-[13px] ml-6 mt-0">
+							Allows Kimchi to use tools without stopping for permission. Use at your own risk.
 						</p>
-					</div>
-
-					{/* ---- Cline ---- */}
-					{selectedAgentId === "cline" ? (
-						<>
-							<div data-settings-section="cline" />
-							<div className="sticky top-0 -mx-5 px-5 pt-4 pb-2 bg-surface-1 z-10">
-								<h2 className="flex items-center gap-2 text-base font-semibold text-text-primary m-0">
-									<Bot size={16} className="text-text-secondary" />
-									Cline
-								</h2>
-							</div>
-							<div className="rounded-lg border border-border bg-surface-0 px-4 py-3 mb-4">
-								<ClineSetupSection
-									controller={clineSettings}
-									mcpController={clineMcpSettings}
-									controlsDisabled={controlsDisabled}
+						{/* <KimchiSetupSection
+							controller={clineSettings}
+							mcpController={clineMcpSettings}
+							controlsDisabled={controlsDisabled}
+							workspaceId={workspaceId}
+							accountSection={
+								<AccountOrganizationSection
 									workspaceId={workspaceId}
-									accountSection={
-										clineSettings.providerId.trim() === "cline" ? (
-											<AccountOrganizationSection
-												workspaceId={workspaceId}
-												open={open}
-												onAccountSwitched={onAccountSwitched}
-											/>
-										) : null
-									}
-									onError={setSaveError}
-									onSaved={handleClineSetupSaved}
+									open={open}
+									onAccountSwitched={onAccountSwitched}
 								/>
-							</div>
-						</>
-					) : null}
+							}
+							onError={setSaveError}
+							onSaved={handleKimchiSetupSaved}
+						/> */}
+					</div>
 
 					{/* ---- Git Prompts ---- */}
 					<div data-settings-section="git-prompts" />
@@ -1063,7 +892,7 @@ export function RuntimeSettingsDialog({
 					>
 						{config?.projectConfigPath
 							? formatPathForDisplay(config.projectConfigPath)
-							: "<project>/.cline/kanban/config.json"}
+							: "<project>/.config/kimchi/studio/config.json"}
 						{config?.projectConfigPath ? <ExternalLink size={12} className="inline ml-1.5 align-middle" /> : null}
 					</p>
 					<div className="rounded-lg border border-border bg-surface-0 px-4 py-3 mb-4">
@@ -1172,7 +1001,7 @@ export function RuntimeSettingsDialog({
 					variant="ghost"
 					className="mr-auto mt-[3px]"
 					icon={<ExternalLink size={14} />}
-					onClick={() => window.open("https://docs.cline.bot/kanban/overview", "_blank")}
+					onClick={() => window.open("https://kimchi.dev/docs", "_blank")}
 				>
 					Read the docs
 				</Button>

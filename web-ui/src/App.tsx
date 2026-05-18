@@ -136,6 +136,7 @@ export default function App(): ReactElement {
 		isLoading: isRuntimeProjectConfigLoading,
 		refresh: refreshRuntimeProjectConfig,
 	} = useRuntimeProjectConfig(currentProjectId);
+	// biome-ignore lint/correctness/noUnusedVariables: No Cline here.
 	const { isBlocked: isKanbanAccessBlocked, refresh: refreshKanbanAccess } = useKanbanAccessGate({
 		workspaceId: currentProjectId,
 	});
@@ -151,7 +152,6 @@ export default function App(): ReactElement {
 		isStartupOnboardingDialogOpen,
 		handleOpenStartupOnboardingDialog,
 		handleCloseStartupOnboardingDialog,
-		handleSelectOnboardingAgent,
 		handleOnboardingClineSetupSaved,
 	} = useStartupOnboarding({
 		currentProjectId,
@@ -301,7 +301,6 @@ export default function App(): ReactElement {
 		newTaskBranchRef,
 		setNewTaskBranchRef,
 		newTaskAgentId,
-		setNewTaskAgentId,
 		newTaskClineSettings,
 		setNewTaskClineSettings,
 		editingTaskId,
@@ -319,7 +318,6 @@ export default function App(): ReactElement {
 		editTaskBranchRef,
 		setEditTaskBranchRef,
 		editTaskAgentId,
-		setEditTaskAgentId,
 		editTaskClineSettings,
 		setEditTaskClineSettings,
 		handleOpenCreateTask,
@@ -782,7 +780,6 @@ export default function App(): ReactElement {
 			branchOptions={createTaskBranchOptions}
 			onBranchRefChange={setEditTaskBranchRef}
 			agentId={editTaskAgentId}
-			onAgentIdChange={setEditTaskAgentId}
 			clineSettings={editTaskClineSettings}
 			onClineSettingsChange={setEditTaskClineSettings}
 			defaultAgentId={runtimeProjectConfig?.selectedAgentId ?? null}
@@ -1097,7 +1094,6 @@ export default function App(): ReactElement {
 						refreshRuntimeProjectConfig();
 						refreshSettingsRuntimeProjectConfig();
 					}}
-					onAccountSwitched={refreshKanbanAccess}
 				/>
 				<DebugDialog
 					open={isDebugDialogOpen}
@@ -1130,7 +1126,6 @@ export default function App(): ReactElement {
 					branchOptions={createTaskBranchOptions}
 					onBranchRefChange={setNewTaskBranchRef}
 					agentId={newTaskAgentId}
-					onAgentIdChange={setNewTaskAgentId}
 					clineSettings={newTaskClineSettings}
 					onClineSettingsChange={setNewTaskClineSettings}
 					defaultAgentId={runtimeProjectConfig?.selectedAgentId ?? null}
@@ -1147,12 +1142,8 @@ export default function App(): ReactElement {
 				<StartupOnboardingDialog
 					open={isStartupOnboardingDialogOpen}
 					onClose={handleCloseStartupOnboardingDialog}
-					selectedAgentId={runtimeProjectConfig?.selectedAgentId ?? null}
-					agents={runtimeProjectConfig?.agents ?? []}
-					clineProviderSettings={runtimeProjectConfig?.clineProviderSettings ?? null}
 					workspaceId={currentProjectId}
 					runtimeConfig={runtimeProjectConfig ?? null}
-					onSelectAgent={handleSelectOnboardingAgent}
 					onClineSetupSaved={handleOnboardingClineSetupSaved}
 				/>
 

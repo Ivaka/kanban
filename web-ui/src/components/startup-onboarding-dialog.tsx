@@ -1,36 +1,20 @@
 import { ChevronLeft, ChevronRight, Circle, CircleDot } from "lucide-react";
 import { type ReactElement, useCallback, useEffect, useState } from "react";
 
-import {
-	TASK_START_ONBOARDING_SLIDES,
-	TaskStartAgentOnboardingCarousel,
-} from "@/components/task-start-agent-onboarding-carousel";
+import { ONBOARDING_SLIDES, TaskStartAgentOnboardingCarousel } from "@/components/task-start-agent-onboarding-carousel";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogBody, DialogFooter, DialogHeader } from "@/components/ui/dialog";
-import type {
-	RuntimeAgentDefinition,
-	RuntimeAgentId,
-	RuntimeClineProviderSettings,
-	RuntimeConfigResponse,
-} from "@/runtime/types";
+import type { RuntimeConfigResponse } from "@/runtime/types";
 
 export function StartupOnboardingDialog({
 	open,
 	onClose,
-	selectedAgentId,
-	agents,
-	clineProviderSettings,
-	onSelectAgent,
 	workspaceId,
 	runtimeConfig,
 	onClineSetupSaved,
 }: {
 	open: boolean;
 	onClose: () => void;
-	selectedAgentId?: RuntimeAgentId | null;
-	agents?: RuntimeAgentDefinition[];
-	clineProviderSettings?: RuntimeClineProviderSettings | null;
-	onSelectAgent?: (agentId: RuntimeAgentId) => Promise<{ ok: boolean; message?: string }>;
 	workspaceId?: string | null;
 	runtimeConfig?: RuntimeConfigResponse | null;
 	onClineSetupSaved?: () => void;
@@ -40,7 +24,7 @@ export function StartupOnboardingDialog({
 	const [onboardingDoneAction, setOnboardingDoneAction] = useState<
 		(() => Promise<{ ok: boolean; message?: string }>) | null
 	>(null);
-	const onboardingSlideCount = TASK_START_ONBOARDING_SLIDES.length;
+	const onboardingSlideCount = ONBOARDING_SLIDES.length;
 	const isFirstOnboardingSlide = onboardingSlideIndex === 0;
 	const isLastOnboardingSlide = onboardingSlideIndex === onboardingSlideCount - 1;
 
@@ -91,11 +75,7 @@ export function StartupOnboardingDialog({
 					open={open}
 					workspaceId={workspaceId ?? null}
 					runtimeConfig={runtimeConfig ?? null}
-					selectedAgentId={selectedAgentId ?? null}
-					agents={agents ?? []}
-					clineProviderSettings={clineProviderSettings ?? null}
 					activeSlideIndex={onboardingSlideIndex}
-					onSelectAgent={onSelectAgent}
 					onClineSetupSaved={onClineSetupSaved}
 					onDoneActionChange={handleOnboardingDoneActionChange}
 				/>
@@ -110,7 +90,7 @@ export function StartupOnboardingDialog({
 					Back
 				</Button>
 				<div className="mx-auto flex items-center gap-1">
-					{TASK_START_ONBOARDING_SLIDES.map((_, index) =>
+					{ONBOARDING_SLIDES.map((_, index) =>
 						index === onboardingSlideIndex ? (
 							<CircleDot key={index} size={14} className="text-accent" />
 						) : (

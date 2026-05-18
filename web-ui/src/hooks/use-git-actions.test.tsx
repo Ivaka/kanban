@@ -85,18 +85,10 @@ function createRuntimeConfig(selectedAgentId: RuntimeConfigResponse["selectedAge
 		globalConfigPath: "/tmp/global-config.json",
 		projectConfigPath: "/tmp/project-config.json",
 		readyForReviewNotificationsEnabled: true,
-		detectedCommands: [],
-		agents: [
-			{
-				id: selectedAgentId,
-				label: selectedAgentId,
-				binary: selectedAgentId,
-				command: selectedAgentId,
-				defaultArgs: [],
-				installed: true,
-				configured: true,
-			},
-		],
+		agentConfig: {
+			installed: true,
+			command: selectedAgentId,
+		},
 		shortcuts: [],
 		clineProviderSettings: {
 			providerId: "anthropic",

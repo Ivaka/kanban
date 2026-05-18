@@ -13,11 +13,11 @@ export function initializeSentry(): void {
 	Sentry.init({
 		dsn: sentryDsn,
 		environment: sentryEnvironment,
-		release: `kanban@${__APP_VERSION__}`,
+		release: `kimchi-studio@${__APP_VERSION__}`,
 		sendDefaultPii: false,
 		initialScope: {
 			tags: {
-				app: "kanban",
+				app: "kimchi-studio",
 				runtime_surface: "web",
 			},
 		},

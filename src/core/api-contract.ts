@@ -947,6 +947,12 @@ export const runtimeAgentDefinitionSchema = z.object({
 });
 export type RuntimeAgentDefinition = z.infer<typeof runtimeAgentDefinitionSchema>;
 
+export const runtimeAgentConfigSchema = z.object({
+	installed: z.boolean(),
+	command: z.string().nullable(),
+});
+export type RuntimeAgentConfig = z.infer<typeof runtimeAgentConfigSchema>;
+
 export const runtimeConfigResponseSchema = z.object({
 	selectedAgentId: runtimeAgentIdSchema,
 	selectedShortcutLabel: z.string().nullable(),
@@ -956,8 +962,7 @@ export const runtimeConfigResponseSchema = z.object({
 	globalConfigPath: z.string(),
 	projectConfigPath: z.string().nullable(),
 	readyForReviewNotificationsEnabled: z.boolean(),
-	detectedCommands: z.array(z.string()),
-	agents: z.array(runtimeAgentDefinitionSchema),
+	agentConfig: runtimeAgentConfigSchema,
 	shortcuts: z.array(runtimeProjectShortcutSchema),
 	clineProviderSettings: runtimeClineProviderSettingsSchema,
 	commitPromptTemplate: z.string(),

@@ -10,39 +10,19 @@ import {
 } from "@/runtime/native-agent";
 import type { RuntimeConfigResponse, RuntimeStateStreamTaskChatMessage } from "@/runtime/types";
 
-function createRuntimeConfigResponse(
-	selectedAgentId: RuntimeConfigResponse["selectedAgentId"],
-	overrides?: Partial<RuntimeConfigResponse>,
-): RuntimeConfigResponse {
+function createRuntimeConfigResponse(overrides?: Partial<RuntimeConfigResponse>): RuntimeConfigResponse {
 	const nextConfig: RuntimeConfigResponse = {
-		selectedAgentId,
+		selectedAgentId: "kimchi",
 		selectedShortcutLabel: null,
 		agentAutonomousModeEnabled: true,
-		effectiveCommand: selectedAgentId === "cline" ? null : selectedAgentId,
+		effectiveCommand: "kimchi",
 		globalConfigPath: "/tmp/global-config.json",
 		projectConfigPath: "/tmp/project/.cline/kanban/config.json",
 		readyForReviewNotificationsEnabled: true,
-		detectedCommands: ["claude", "codex"],
-		agents: [
-			{
-				id: "cline",
-				label: "Cline",
-				binary: "cline",
-				command: "cline",
-				defaultArgs: [],
-				installed: false,
-				configured: true,
-			},
-			{
-				id: "claude",
-				label: "Claude Code",
-				binary: "claude",
-				command: "claude",
-				defaultArgs: [],
-				installed: true,
-				configured: true,
-			},
-		],
+		agentConfig: {
+			installed: true,
+			command: "kimchi",
+		},
 		shortcuts: [],
 		clineProviderSettings: {
 			providerId: "cline",
@@ -82,109 +62,26 @@ function createLatestTaskChatMessage(taskId: string): RuntimeStateStreamTaskChat
 }
 
 describe("native-agent helpers", () => {
-	it("treats cline as the native chat agent", () => {
-		expect(isNativeClineAgentSelected("cline")).toBe(true);
+	it("treats nothing as the native chat agent", () => {
+		expect(isNativeClineAgentSelected("cline")).toBe(false);
 		expect(isNativeClineAgentSelected("codex")).toBe(false);
 	});
 
-	it("treats selected cline as task-ready when cline authentication is configured", () => {
-		expect(isTaskAgentSetupSatisfied(createRuntimeConfigResponse("cline"))).toBe(true);
+	it("returns agent setup satisfied based on agentConfig installed status", () => {
+		expect(isTaskAgentSetupSatisfied(createRuntimeConfigResponse())).toBe(true);
+		expect(
+			isTaskAgentSetupSatisfied(createRuntimeConfigResponse({ agentConfig: { installed: false, command: null } })),
+		).toBe(false);
 		expect(isTaskAgentSetupSatisfied(null)).toBeNull();
 	});
 
-	it("requires setup when cline is selected and cline authentication is missing", () => {
-		const config = createRuntimeConfigResponse("cline", {
-			agents: [
-				{
-					id: "cline",
-					label: "Cline",
-					binary: "cline",
-					command: "cline",
-					defaultArgs: [],
-					installed: true,
-					configured: true,
-				},
-			],
-			clineProviderSettings: {
-				providerId: null,
-				modelId: null,
-				baseUrl: null,
-				apiKeyConfigured: false,
-				oauthProvider: null,
-				oauthAccessTokenConfigured: false,
-				oauthRefreshTokenConfigured: false,
-				oauthAccountId: null,
-				oauthExpiresAt: null,
-			},
-		});
-		expect(isTaskAgentSetupSatisfied(config)).toBe(false);
+	it("does not show the navbar setup hint when agent is installed", () => {
+		expect(getTaskAgentNavbarHint(createRuntimeConfigResponse())).toBeUndefined();
 	});
 
-	it("falls back to other installed launch-supported agents when cline auth is missing", () => {
-		const config = createRuntimeConfigResponse("cline", {
-			agents: [
-				{
-					id: "cline",
-					label: "Cline",
-					binary: "cline",
-					command: "cline",
-					defaultArgs: [],
-					installed: true,
-					configured: true,
-				},
-				{
-					id: "codex",
-					label: "OpenAI Codex",
-					binary: "codex",
-					command: "codex",
-					defaultArgs: [],
-					installed: true,
-					configured: false,
-				},
-			],
-			clineProviderSettings: {
-				providerId: null,
-				modelId: null,
-				baseUrl: null,
-				apiKeyConfigured: false,
-				oauthProvider: null,
-				oauthAccessTokenConfigured: false,
-				oauthRefreshTokenConfigured: false,
-				oauthAccountId: null,
-				oauthExpiresAt: null,
-			},
-		});
-		expect(isTaskAgentSetupSatisfied(config)).toBe(true);
-	});
-
-	it("does not show the navbar setup hint when cline is configured through the native SDK path", () => {
-		expect(getTaskAgentNavbarHint(createRuntimeConfigResponse("cline"))).toBeUndefined();
-	});
-
-	it("shows the navbar setup hint when no task agent path is ready", () => {
-		const config = createRuntimeConfigResponse("cline", {
-			agents: [
-				{
-					id: "cline",
-					label: "Cline",
-					binary: "cline",
-					command: "cline",
-					defaultArgs: [],
-					installed: true,
-					configured: true,
-				},
-			],
-			clineProviderSettings: {
-				providerId: null,
-				modelId: null,
-				baseUrl: null,
-				apiKeyConfigured: false,
-				oauthProvider: null,
-				oauthAccessTokenConfigured: false,
-				oauthRefreshTokenConfigured: false,
-				oauthAccountId: null,
-				oauthExpiresAt: null,
-			},
+	it("shows the navbar setup hint when agent is not installed", () => {
+		const config = createRuntimeConfigResponse({
+			agentConfig: { installed: false, command: null },
 		});
 		expect(getTaskAgentNavbarHint(config)).toBe("No agent configured");
 		expect(
@@ -221,22 +118,6 @@ describe("native-agent helpers", () => {
 				oauthExpiresAt: null,
 			}),
 		).toBe(true);
-	});
-
-	it("ignores non-launch agents when checking native CLI availability", () => {
-		const config = createRuntimeConfigResponse("claude");
-		config.agents = [
-			{
-				id: "gemini",
-				label: "Gemini CLI",
-				binary: "gemini",
-				command: "gemini",
-				defaultArgs: [],
-				installed: true,
-				configured: false,
-			},
-		];
-		expect(isTaskAgentSetupSatisfied(config)).toBe(false);
 	});
 
 	it("selects the latest incoming chat message only for the matching task", () => {

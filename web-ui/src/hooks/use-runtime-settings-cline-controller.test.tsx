@@ -75,18 +75,10 @@ function createRuntimeConfigResponse(
 		globalConfigPath: "/tmp/global-config.json",
 		projectConfigPath: "/tmp/project/.cline/kanban/config.json",
 		readyForReviewNotificationsEnabled: true,
-		detectedCommands: ["cline"],
-		agents: [
-			{
-				id: "cline",
-				label: "Cline",
-				binary: "cline",
-				command: "cline",
-				defaultArgs: [],
-				installed: true,
-				configured: true,
-			},
-		],
+		agentConfig: {
+			installed: true,
+			command: null,
+		},
 		shortcuts: [],
 		clineProviderSettings: {
 			providerId: "cline",

@@ -95,8 +95,8 @@ vi.mock("@runtime-shortcuts", () => ({
 	areRuntimeProjectShortcutsEqual: vi.fn(() => true),
 }));
 
-vi.mock("@/components/shared/cline-setup-section", () => ({
-	ClineSetupSection: ({ onSaved }: { onSaved?: () => void }) => {
+vi.mock("@/components/shared/kimchi-setup-section", () => ({
+	KimchiSetupSection: ({ onSaved }: { onSaved?: () => void }) => {
 		clineSetupSectionOnSavedRef.onSaved = onSaved ?? null;
 		return null;
 	},
@@ -172,7 +172,6 @@ const savedClineOauthConfig = {
 	agentAutonomousModeEnabled: true,
 	readyForReviewNotificationsEnabled: false,
 	effectiveCommand: "cline",
-	detectedCommands: [],
 	shortcuts: [],
 	commitPromptTemplate: "",
 	openPrPromptTemplate: "",
@@ -180,22 +179,10 @@ const savedClineOauthConfig = {
 	openPrPromptTemplateDefault: "",
 	globalConfigPath: null,
 	projectConfigPath: null,
-	agents: [
-		{
-			id: "cline",
-			label: "Cline",
-			binary: "cline",
-			command: "cline",
-			installed: true,
-		},
-		{
-			id: "claude",
-			label: "Claude Code",
-			binary: "claude",
-			command: "claude",
-			installed: true,
-		},
-	],
+	agentConfig: {
+		installed: true,
+		command: null,
+	},
 	clineProviderSettings: {
 		providerId: null,
 		modelId: "cline-sonnet",

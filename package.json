@@ -1,26 +1,28 @@
 {
-  "name": "kanban",
-  "version": "0.1.68",
+  "name": "kimchi-studio",
+  "version": "0.0.1",
   "description": "A kanban foundation for coding agents",
   "publishConfig": {
     "access": "public",
     "provenance": true
   },
   "keywords": [
+    "kimchi",
+    "kimchi-studio",
     "kanban",
     "agents",
     "cli",
     "task-management",
     "typescript"
   ],
-  "homepage": "https://github.com/cline/kanban",
+  "homepage": "https://github.com/castai/kimchi-agent-studio",
   "bugs": {
-    "url": "https://github.com/cline/kanban/issues"
+    "url": "https://github.com/castai/kimchi-agent-studio/issues"
   },
-  "author": "Cline",
+  "author": "Kimchi",
   "repository": {
     "type": "git",
-    "url": "https://github.com/cline/kanban"
+    "url": "https://github.com/castai/kimchi-agent-studio"
   },
   "type": "module",
   "bin": {

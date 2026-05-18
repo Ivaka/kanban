@@ -9,17 +9,13 @@ vi.mock("../../../src/terminal/command-discovery.js", () => ({
 }));
 
 import type { RuntimeConfigState } from "../../../src/config/runtime-config";
-import {
-	buildRuntimeConfigResponse,
-	detectInstalledCommands,
-	resolveAgentCommand,
-} from "../../../src/terminal/agent-registry";
+import { buildRuntimeConfigResponse, resolveAgentCommand } from "../../../src/terminal/agent-registry";
 
 function createRuntimeConfigState(overrides: Partial<RuntimeConfigState> = {}): RuntimeConfigState {
 	return {
 		globalConfigPath: "/tmp/global-config.json",
 		projectConfigPath: "/tmp/project-config.json",
-		selectedAgentId: "claude",
+		selectedAgentId: "kimchi",
 		selectedShortcutLabel: null,
 		agentAutonomousModeEnabled: true,
 		readyForReviewNotificationsEnabled: true,
@@ -41,27 +37,21 @@ beforeEach(() => {
 });
 
 describe("agent-registry", () => {
-	it("detects installed commands from the inherited PATH", () => {
-		commandDiscoveryMocks.isBinaryAvailableOnPath.mockImplementation((binary: string) => binary === "claude");
-
-		const detected = detectInstalledCommands();
-
-		expect(detected).toEqual(["claude"]);
-		expect(commandDiscoveryMocks.isBinaryAvailableOnPath).toHaveBeenCalledTimes(9);
-	});
-
 	it("treats shell-only agents as unavailable", () => {
 		commandDiscoveryMocks.isBinaryAvailableOnPath.mockImplementation((binary: string) => binary === "npx");
 
-		const resolved = resolveAgentCommand(createRuntimeConfigState({ selectedAgentId: "claude" }));
+		const resolved = resolveAgentCommand(createRuntimeConfigState({ selectedAgentId: "kimchi" }));
 
 		expect(resolved).toBeNull();
 	});
 });
 
 describe("buildRuntimeConfigResponse", () => {
-	it("keeps curated agent default args independent of autonomous mode", () => {
+	it("returns Kimchi agent config with installed status", () => {
+		commandDiscoveryMocks.isBinaryAvailableOnPath.mockImplementation((binary: string) => binary === "kimchi");
+
 		const config = createRuntimeConfigState({
+			selectedAgentId: "kimchi",
 			agentAutonomousModeEnabled: true,
 		});
 
@@ -78,21 +68,17 @@ describe("buildRuntimeConfigResponse", () => {
 		});
 
 		expect(response.agentAutonomousModeEnabled).toBe(true);
-		expect(response.agents.map((agent) => agent.id)).toEqual(["claude", "codex", "cline", "droid", "kiro", "kimchi"]);
-		expect(response.agents.find((agent) => agent.id === "claude")?.defaultArgs).toEqual([]);
-		expect(response.agents.find((agent) => agent.id === "codex")?.defaultArgs).toEqual([]);
-		expect(response.agents.find((agent) => agent.id === "cline")?.defaultArgs).toEqual([]);
-		expect(response.agents.find((agent) => agent.id === "droid")?.defaultArgs).toEqual([]);
-		expect(response.agents.find((agent) => agent.id === "kiro")?.defaultArgs).toEqual(["chat"]);
-		expect(response.agents.find((agent) => agent.id === "kimchi")?.defaultArgs).toEqual([]);
-		expect(response.agents.find((agent) => agent.id === "cline")?.installed).toBe(true);
+		expect(response.agentConfig.installed).toBe(true);
+		expect(response.agentConfig.command).toBe("kimchi");
 	});
 
-	it("omits autonomous flags from curated agent commands when disabled", () => {
+	it("returns Kimchi agent config as not installed when binary not found", () => {
+		commandDiscoveryMocks.isBinaryAvailableOnPath.mockReturnValue(false);
+
 		const config = createRuntimeConfigState({
+			selectedAgentId: "kimchi",
 			agentAutonomousModeEnabled: false,
 		});
-		commandDiscoveryMocks.isBinaryAvailableOnPath.mockImplementation((binary: string) => binary === "claude");
 
 		const response = buildRuntimeConfigResponse(config, {
 			providerId: null,
@@ -107,19 +93,8 @@ describe("buildRuntimeConfigResponse", () => {
 		});
 
 		expect(response.agentAutonomousModeEnabled).toBe(false);
-		expect(response.agents.map((agent) => agent.id)).toEqual(["claude", "codex", "cline", "droid", "kiro", "kimchi"]);
-		expect(response.agents.find((agent) => agent.id === "claude")?.defaultArgs).toEqual([]);
-		expect(response.agents.find((agent) => agent.id === "codex")?.defaultArgs).toEqual([]);
-		expect(response.agents.find((agent) => agent.id === "cline")?.defaultArgs).toEqual([]);
-		expect(response.agents.find((agent) => agent.id === "droid")?.defaultArgs).toEqual([]);
-		expect(response.agents.find((agent) => agent.id === "kiro")?.defaultArgs).toEqual(["chat"]);
-		expect(response.agents.find((agent) => agent.id === "kimchi")?.defaultArgs).toEqual([]);
-		expect(response.agents.find((agent) => agent.id === "cline")?.installed).toBe(true);
-		expect(response.agents.find((agent) => agent.id === "claude")?.command).toBe("claude");
-		expect(response.agents.find((agent) => agent.id === "codex")?.command).toBe("codex");
-		expect(response.agents.find((agent) => agent.id === "droid")?.command).toBe("droid");
-		expect(response.agents.find((agent) => agent.id === "kiro")?.command).toBe("kiro-cli chat");
-		expect(response.agents.find((agent) => agent.id === "kimchi")?.command).toBe("kimchi");
+		expect(response.agentConfig.installed).toBe(false);
+		expect(response.agentConfig.command).toBeNull();
 	});
 
 	it("sets debug mode from runtime environment variables", () => {

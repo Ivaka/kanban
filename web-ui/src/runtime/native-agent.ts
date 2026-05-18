@@ -1,4 +1,3 @@
-import { isRuntimeAgentLaunchSupported } from "@runtime-agent-catalog";
 import type {
 	RuntimeAgentId,
 	RuntimeClineProviderSettings,
@@ -7,8 +6,9 @@ import type {
 	RuntimeTaskChatMessage,
 } from "@/runtime/types";
 
+// biome-ignore lint/correctness/noUnusedFunctionParameters: no Cline here. Keeping for reference only.
 export function isNativeClineAgentSelected(agentId: RuntimeAgentId | null | undefined): boolean {
-	return agentId === "cline";
+	return false;
 }
 
 export function getRuntimeClineProviderSettings(
@@ -63,24 +63,16 @@ export function isClineOauthAuthenticated(settings: RuntimeClineProviderSettings
 }
 
 export function isTaskAgentSetupSatisfied(
-	config: Pick<RuntimeConfigResponse, "selectedAgentId" | "agents" | "clineProviderSettings"> | null | undefined,
+	config: Pick<RuntimeConfigResponse, "agentConfig" | "clineProviderSettings"> | null | undefined,
 ): boolean | null {
 	if (!config) {
 		return null;
 	}
-	if (isNativeClineAgentSelected(config.selectedAgentId)) {
-		if (isClineProviderAuthenticated(getRuntimeClineProviderSettings(config))) {
-			return true;
-		}
-		return config.agents.some(
-			(agent) => agent.id !== "cline" && isRuntimeAgentLaunchSupported(agent.id) && agent.installed,
-		);
-	}
-	return config.agents.some((agent) => isRuntimeAgentLaunchSupported(agent.id) && agent.installed);
+	return config.agentConfig.installed;
 }
 
 export function getTaskAgentNavbarHint(
-	config: Pick<RuntimeConfigResponse, "selectedAgentId" | "agents" | "clineProviderSettings"> | null | undefined,
+	config: Pick<RuntimeConfigResponse, "agentConfig" | "clineProviderSettings"> | null | undefined,
 	options?: {
 		shouldUseNavigationPath?: boolean;
 	},

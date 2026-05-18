@@ -23,27 +23,10 @@ function createRuntimeConfigResponse(selectedAgentId: RuntimeConfigResponse["sel
 		globalConfigPath: "/tmp/global-config.json",
 		projectConfigPath: "/tmp/project/.cline/kanban/config.json",
 		readyForReviewNotificationsEnabled: true,
-		detectedCommands: [selectedAgentId],
-		agents: [
-			{
-				id: "claude",
-				label: "Claude Code",
-				binary: "claude",
-				command: "claude",
-				defaultArgs: [],
-				installed: selectedAgentId === "claude",
-				configured: selectedAgentId === "claude",
-			},
-			{
-				id: "codex",
-				label: "OpenAI Codex",
-				binary: "codex",
-				command: "codex",
-				defaultArgs: [],
-				installed: selectedAgentId === "codex",
-				configured: selectedAgentId === "codex",
-			},
-		],
+		agentConfig: {
+			installed: true,
+			command: selectedAgentId,
+		},
 		shortcuts: [],
 		clineProviderSettings: {
 			providerId: null,

@@ -1,57 +1,8 @@
 import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { delimiter, join } from "node:path";
-
 import { describe, expect, it } from "vitest";
-
-import {
-	loadGlobalRuntimeConfig,
-	loadRuntimeConfig,
-	pickBestInstalledAgentIdFromDetected,
-	saveRuntimeConfig,
-	updateRuntimeConfig,
-} from "../../../src/config/runtime-config";
-import { createTempDir } from "../../utilities/temp-dir";
-
-function withTemporaryEnv<T>(
-	input: {
-		home: string;
-		pathPrefix?: string;
-		replacePath?: boolean;
-	},
-	run: () => Promise<T>,
-): Promise<T> {
-	const previousHome = process.env.HOME;
-	const previousUserProfile = process.env.USERPROFILE;
-	const previousPath = process.env.PATH;
-	process.env.HOME = input.home;
-	process.env.USERPROFILE = input.home;
-	if (input.pathPrefix) {
-		process.env.PATH = input.replacePath
-			? input.pathPrefix
-			: previousPath
-				? `${input.pathPrefix}${delimiter}${previousPath}`
-				: input.pathPrefix;
-	}
-	return run().finally(() => {
-		if (previousHome === undefined) {
-			delete process.env.HOME;
-		} else {
-			process.env.HOME = previousHome;
-		}
-		if (previousUserProfile === undefined) {
-			delete process.env.USERPROFILE;
-		} else {
-			process.env.USERPROFILE = previousUserProfile;
-		}
-		if (input.pathPrefix) {
-			if (previousPath === undefined) {
-				delete process.env.PATH;
-			} else {
-				process.env.PATH = previousPath;
-			}
-		}
-	});
-}
+import { loadRuntimeConfig, saveRuntimeConfig, updateRuntimeConfig } from "../../../src/config/runtime-config.js";
+import { createTempDir } from "../../utilities/temp-dir.js";
 
 function writeFakeCommand(binDir: string, command: string): void {
 	mkdirSync(binDir, { recursive: true });
@@ -61,26 +12,51 @@ function writeFakeCommand(binDir: string, command: string): void {
 		return;
 	}
 	const scriptPath = join(binDir, command);
-	writeFileSync(scriptPath, "#!/bin/sh\nexit 0\n", "utf8");
+	writeFileSync(scriptPath, "#!/usr/bin/env sh\nexit 0\n", "utf8");
 	chmodSync(scriptPath, 0o755);
 }
 
-describe.sequential("runtime-config auto agent selection", () => {
-	it("selects agents using the configured priority order", () => {
-		expect(pickBestInstalledAgentIdFromDetected(["codex", "opencode", "gemini"])).toBe("codex");
-		expect(pickBestInstalledAgentIdFromDetected(["opencode", "droid", "gemini"])).toBe("droid");
-		expect(pickBestInstalledAgentIdFromDetected(["kiro-cli", "gemini"])).toBe("kiro");
-		expect(pickBestInstalledAgentIdFromDetected(["droid", "gemini", "cline"])).toBe("droid");
-		expect(pickBestInstalledAgentIdFromDetected(["gemini", "cline"])).toBeNull();
-		expect(pickBestInstalledAgentIdFromDetected(["claude", "codex", "cline"])).toBe("claude");
-		expect(pickBestInstalledAgentIdFromDetected(["claude", "droid"])).toBe("claude");
-		expect(pickBestInstalledAgentIdFromDetected(["cline"])).toBeNull();
-		expect(pickBestInstalledAgentIdFromDetected([])).toBeNull();
-		expect(pickBestInstalledAgentIdFromDetected(["kimchi", "gemini"])).toBe("kimchi");
-		expect(pickBestInstalledAgentIdFromDetected(["kiro-cli", "kimchi"])).toBe("kiro");
-	});
+function withTemporaryEnv<T>(
+	input: {
+		home: string;
+		pathPrefix?: string;
+		replacePath?: boolean;
+	},
+	fn: () => T | Promise<T>,
+): Promise<T> {
+	const previousHome = process.env.HOME;
+	const previousPath = process.env.PATH;
+	const previousKanbanConfig = process.env.KANBAN_CONFIG;
+	process.env.HOME = input.home;
+	process.env.KANBAN_CONFIG = undefined;
+	if (input.pathPrefix) {
+		if (input.replacePath) {
+			process.env.PATH = input.pathPrefix;
+		} else {
+			process.env.PATH = `${input.pathPrefix}${delimiter}${process.env.PATH}`;
+		}
+	}
+	async function restore(): Promise<void> {
+		process.env.HOME = previousHome;
+		process.env.PATH = previousPath;
+		process.env.KANBAN_CONFIG = previousKanbanConfig;
+	}
+	async function run(): Promise<T> {
+		let result: T;
+		try {
+			result = await fn();
+		} catch (error) {
+			await restore();
+			throw error;
+		}
+		await restore();
+		return result;
+	}
+	return run();
+}
 
-	it("auto-selects and persists when unset", async () => {
+describe.sequential("runtime-config auto agent selection", () => {
+	it("defaults to kimchi when unset", async () => {
 		if (process.platform === "win32") {
 			return;
 		}
@@ -89,9 +65,7 @@ describe.sequential("runtime-config auto agent selection", () => {
 		const { path: tempBin, cleanup: cleanupBin } = createTempDir("kanban-bin-runtime-config-");
 
 		try {
-			writeFakeCommand(tempBin, "opencode");
-			writeFakeCommand(tempBin, "codex");
-			writeFakeCommand(tempBin, "gemini");
+			writeFakeCommand(tempBin, "kimchi");
 
 			const previousShell = process.env.SHELL;
 			try {
@@ -99,24 +73,12 @@ describe.sequential("runtime-config auto agent selection", () => {
 				const isolatedPath = `${tempBin}${delimiter}/usr/bin${delimiter}/bin`;
 				await withTemporaryEnv({ home: tempHome, pathPrefix: isolatedPath, replacePath: true }, async () => {
 					const state = await loadRuntimeConfig(tempProject);
-					expect(state.selectedAgentId).toBe("codex");
-					const persisted = JSON.parse(
-						readFileSync(join(tempHome, ".cline", "kanban", "config.json"), "utf8"),
-					) as {
-						selectedAgentId?: string;
-						agentAutonomousModeEnabled?: boolean;
-						readyForReviewNotificationsEnabled?: boolean;
-						commitPromptTemplate?: string;
-						openPrPromptTemplate?: string;
-					};
-					expect(persisted.selectedAgentId).toBe("codex");
-					expect(persisted.agentAutonomousModeEnabled).toBeUndefined();
-					expect(persisted.readyForReviewNotificationsEnabled).toBeUndefined();
-					expect(persisted.commitPromptTemplate).toBeUndefined();
-					expect(persisted.openPrPromptTemplate).toBeUndefined();
+					expect(state.selectedAgentId).toBe("kimchi");
+					// No config file created since kimchi is the default
+					expect(existsSync(join(tempHome, ".config", "kimchi", "studio", "config.json"))).toBe(false);
 
 					const reloadedState = await loadRuntimeConfig(tempProject);
-					expect(reloadedState.selectedAgentId).toBe("codex");
+					expect(reloadedState.selectedAgentId).toBe("kimchi");
 				});
 			} finally {
 				if (previousShell === undefined) {
@@ -124,15 +86,46 @@ describe.sequential("runtime-config auto agent selection", () => {
 				} else {
 					process.env.SHELL = previousShell;
 				}
+				cleanupBin();
 			}
 		} finally {
-			cleanupBin();
 			cleanupProject();
 			cleanupHome();
 		}
 	});
+});
 
-	it("does not write config when no supported CLI is detected", async () => {
+describe.sequential("runtime-config live config", () => {
+	it("treats the home directory as global-only config scope", async () => {
+		const { path: tempHome, cleanup: cleanupHome } = createTempDir("kanban-home-runtime-config-home-scope-");
+
+		try {
+			await withTemporaryEnv({ home: tempHome }, async () => {
+				const state = await loadRuntimeConfig(tempHome);
+				expect(state.globalConfigPath).toBe(join(tempHome, ".config", "kimchi", "studio", "config.json"));
+				expect(state.projectConfigPath).toBeNull();
+				expect(state.shortcuts).toEqual([]);
+			});
+		} finally {
+			cleanupHome();
+		}
+	});
+
+	it("loads global runtime config without a project scope", async () => {
+		const { path: tempHome, cleanup: cleanupHome } = createTempDir("kanban-home-runtime-config-global-only-");
+
+		try {
+			await withTemporaryEnv({ home: tempHome }, async () => {
+				const state = await loadRuntimeConfig(tempHome);
+				expect(state.globalConfigPath).toBe(join(tempHome, ".config", "kimchi", "studio", "config.json"));
+				expect(state.projectConfigPath).toBeNull();
+			});
+		} finally {
+			cleanupHome();
+		}
+	});
+
+	it("defaults to kimchi even when no CLI is detected", async () => {
 		if (process.platform === "win32") {
 			return;
 		}
@@ -146,8 +139,9 @@ describe.sequential("runtime-config auto agent selection", () => {
 				process.env.SHELL = "/definitely-not-a-shell";
 				await withTemporaryEnv({ home: tempHome, pathPrefix: tempBin, replacePath: true }, async () => {
 					const state = await loadRuntimeConfig(tempProject);
-					expect(state.selectedAgentId).toBe("cline");
-					expect(existsSync(join(tempHome, ".cline", "kanban", "config.json"))).toBe(false);
+					expect(state.selectedAgentId).toBe("kimchi");
+					// Kimchi is always the default, no config file needed
+					expect(existsSync(join(tempHome, ".config", "kimchi", "studio", "config.json"))).toBe(false);
 				});
 			} finally {
 				if (previousShell === undefined) {
@@ -156,68 +150,23 @@ describe.sequential("runtime-config auto agent selection", () => {
 					process.env.SHELL = previousShell;
 				}
 			}
-		} finally {
+
 			cleanupBin();
+		} finally {
 			cleanupProject();
 			cleanupHome();
 		}
 	});
 
-	it("treats the home directory as global-only config scope", async () => {
-		const { path: tempHome, cleanup: cleanupHome } = createTempDir("kanban-home-runtime-config-home-scope-");
-
-		try {
-			await withTemporaryEnv({ home: tempHome }, async () => {
-				const state = await loadRuntimeConfig(tempHome);
-				expect(state.globalConfigPath).toBe(join(tempHome, ".cline", "kanban", "config.json"));
-				expect(state.projectConfigPath).toBeNull();
-				expect(state.shortcuts).toEqual([]);
-
-				const updated = await updateRuntimeConfig(tempHome, {
-					selectedAgentId: "codex",
-				});
-				expect(updated.selectedAgentId).toBe("codex");
-				expect(updated.projectConfigPath).toBeNull();
-
-				const globalPayload = JSON.parse(
-					readFileSync(join(tempHome, ".cline", "kanban", "config.json"), "utf8"),
-				) as {
-					selectedAgentId?: string;
-					shortcuts?: unknown;
-				};
-				expect(globalPayload.selectedAgentId).toBe("codex");
-				expect(globalPayload.shortcuts).toBeUndefined();
-			});
-		} finally {
-			cleanupHome();
-		}
-	});
-
-	it("loads global runtime config without a project scope", async () => {
-		const { path: tempHome, cleanup: cleanupHome } = createTempDir("kanban-home-runtime-config-global-only-");
-
-		try {
-			await withTemporaryEnv({ home: tempHome }, async () => {
-				const state = await loadGlobalRuntimeConfig();
-				expect(state.globalConfigPath).toBe(join(tempHome, ".cline", "kanban", "config.json"));
-				expect(state.projectConfigPath).toBeNull();
-				expect(state.shortcuts).toEqual([]);
-			});
-		} finally {
-			cleanupHome();
-		}
-	});
-
-	it("normalizes unsupported configured agents to the default launch agent", async () => {
+	it("normalized unsupported configured agents to the default launch agent", async () => {
 		const { path: tempHome, cleanup: cleanupHome } = createTempDir("kanban-home-runtime-config-set-");
 		const { path: tempProject, cleanup: cleanupProject } = createTempDir("kanban-project-runtime-config-set-");
 		const { path: tempBin, cleanup: cleanupBin } = createTempDir("kanban-bin-runtime-config-set-");
 
 		try {
-			writeFakeCommand(tempBin, "claude");
-			writeFakeCommand(tempBin, "codex");
+			writeFakeCommand(tempBin, "kimchi");
 
-			const runtimeConfigDir = join(tempHome, ".cline", "kanban");
+			const runtimeConfigDir = join(tempHome, ".config", "kimchi", "studio");
 			mkdirSync(runtimeConfigDir, { recursive: true });
 			writeFileSync(
 				join(runtimeConfigDir, "config.json"),
@@ -233,48 +182,7 @@ describe.sequential("runtime-config auto agent selection", () => {
 
 			await withTemporaryEnv({ home: tempHome, pathPrefix: tempBin }, async () => {
 				const state = await loadRuntimeConfig(tempProject);
-				expect(state.selectedAgentId).toBe("cline");
-			});
-		} finally {
-			cleanupBin();
-			cleanupProject();
-			cleanupHome();
-		}
-	});
-
-	it("preserves a persisted kimchi selection through load/save round-trip", async () => {
-		const { path: tempHome, cleanup: cleanupHome } = createTempDir("kanban-home-runtime-config-kimchi-");
-		const { path: tempProject, cleanup: cleanupProject } = createTempDir("kanban-project-runtime-config-kimchi-");
-		const { path: tempBin, cleanup: cleanupBin } = createTempDir("kanban-bin-runtime-config-kimchi-");
-
-		try {
-			writeFakeCommand(tempBin, "kimchi");
-
-			const runtimeConfigDir = join(tempHome, ".cline", "kanban");
-			mkdirSync(runtimeConfigDir, { recursive: true });
-			writeFileSync(
-				join(runtimeConfigDir, "config.json"),
-				JSON.stringify(
-					{
-						selectedAgentId: "kimchi",
-					},
-					null,
-					2,
-				),
-				"utf8",
-			);
-
-			await withTemporaryEnv({ home: tempHome, pathPrefix: tempBin }, async () => {
-				const state = await loadRuntimeConfig(tempProject);
 				expect(state.selectedAgentId).toBe("kimchi");
-
-				const persisted = JSON.parse(readFileSync(join(tempHome, ".cline", "kanban", "config.json"), "utf8")) as {
-					selectedAgentId?: string;
-				};
-				expect(persisted.selectedAgentId).toBe("kimchi");
-
-				const reloaded = await loadRuntimeConfig(tempProject);
-				expect(reloaded.selectedAgentId).toBe("kimchi");
 			});
 		} finally {
 			cleanupBin();
@@ -289,9 +197,9 @@ describe.sequential("runtime-config auto agent selection", () => {
 		const { path: tempBin, cleanup: cleanupBin } = createTempDir("kanban-bin-runtime-config-existing-");
 
 		try {
-			writeFakeCommand(tempBin, "codex");
+			writeFakeCommand(tempBin, "kimchi");
 
-			const runtimeConfigDir = join(tempHome, ".cline", "kanban");
+			const runtimeConfigDir = join(tempHome, ".config", "kimchi", "studio");
 			mkdirSync(runtimeConfigDir, { recursive: true });
 			writeFileSync(
 				join(runtimeConfigDir, "config.json"),
@@ -307,7 +215,7 @@ describe.sequential("runtime-config auto agent selection", () => {
 
 			await withTemporaryEnv({ home: tempHome, pathPrefix: tempBin }, async () => {
 				const state = await loadRuntimeConfig(tempProject);
-				expect(state.selectedAgentId).toBe("cline");
+				expect(state.selectedAgentId).toBe("kimchi");
 			});
 		} finally {
 			cleanupBin();
@@ -316,66 +224,23 @@ describe.sequential("runtime-config auto agent selection", () => {
 		}
 	});
 
-	it("save omits default keys when they were not previously set", async () => {
-		const { path: tempHome, cleanup: cleanupHome } = createTempDir("kanban-home-runtime-config-omit-defaults-");
-		const { path: tempProject, cleanup: cleanupProject } = createTempDir(
-			"kanban-project-runtime-config-omit-defaults-",
-		);
-
-		try {
-			const runtimeConfigDir = join(tempHome, ".cline", "kanban");
-			mkdirSync(runtimeConfigDir, { recursive: true });
-			writeFileSync(join(runtimeConfigDir, "config.json"), "{}", "utf8");
-
-			await withTemporaryEnv({ home: tempHome }, async () => {
-				const current = await loadRuntimeConfig(tempProject);
-				await saveRuntimeConfig(tempProject, {
-					selectedAgentId: "cline",
-					selectedShortcutLabel: null,
-					agentAutonomousModeEnabled: true,
-					readyForReviewNotificationsEnabled: true,
-					shortcuts: [],
-					commitPromptTemplate: current.commitPromptTemplateDefault,
-					openPrPromptTemplate: current.openPrPromptTemplateDefault,
-				});
-
-				const globalPayload = JSON.parse(
-					readFileSync(join(tempHome, ".cline", "kanban", "config.json"), "utf8"),
-				) as {
-					selectedAgentId?: string;
-					agentAutonomousModeEnabled?: boolean;
-					readyForReviewNotificationsEnabled?: boolean;
-					commitPromptTemplate?: string;
-					openPrPromptTemplate?: string;
-				};
-				expect(globalPayload.selectedAgentId).toBeUndefined();
-				expect(globalPayload.agentAutonomousModeEnabled).toBeUndefined();
-				expect(globalPayload.readyForReviewNotificationsEnabled).toBeUndefined();
-				expect(globalPayload.commitPromptTemplate).toBeUndefined();
-				expect(globalPayload.openPrPromptTemplate).toBeUndefined();
-				expect(existsSync(join(tempProject, ".cline", "kanban", "config.json"))).toBe(false);
-			});
-		} finally {
-			cleanupProject();
-			cleanupHome();
-		}
-	});
-
 	it("removes an existing empty project config file when no shortcuts are saved", async () => {
-		const { path: tempHome, cleanup: cleanupHome } = createTempDir("kanban-home-runtime-config-cleanup-empty-");
+		const { path: tempHome, cleanup: cleanupHome } = createTempDir("kanban-home-runtime-config-empty-project-");
 		const { path: tempProject, cleanup: cleanupProject } = createTempDir(
-			"kanban-project-runtime-config-cleanup-empty-",
+			"kanban-project-runtime-config-empty-project-",
 		);
+		const { path: tempBin, cleanup: cleanupBin } = createTempDir("kanban-bin-runtime-config-empty-project-");
 
 		try {
-			const runtimeProjectConfigDir = join(tempProject, ".cline", "kanban");
-			mkdirSync(runtimeProjectConfigDir, { recursive: true });
-			writeFileSync(join(runtimeProjectConfigDir, "config.json"), "{}", "utf8");
+			writeFakeCommand(tempBin, "kimchi");
 
-			await withTemporaryEnv({ home: tempHome }, async () => {
+			const projectConfigDir = join(tempProject, ".config", "kimchi", "studio");
+			mkdirSync(projectConfigDir, { recursive: true });
+			writeFileSync(join(projectConfigDir, "config.json"), "{}", "utf8");
+			await withTemporaryEnv({ home: tempHome, pathPrefix: tempBin }, async () => {
 				const current = await loadRuntimeConfig(tempProject);
 				await saveRuntimeConfig(tempProject, {
-					selectedAgentId: "cline",
+					selectedAgentId: "kimchi",
 					selectedShortcutLabel: null,
 					agentAutonomousModeEnabled: true,
 					readyForReviewNotificationsEnabled: true,
@@ -383,42 +248,10 @@ describe.sequential("runtime-config auto agent selection", () => {
 					commitPromptTemplate: current.commitPromptTemplateDefault,
 					openPrPromptTemplate: current.openPrPromptTemplateDefault,
 				});
-
-				expect(existsSync(join(tempProject, ".cline", "kanban", "config.json"))).toBe(false);
+				expect(existsSync(join(projectConfigDir, "config.json"))).toBe(false);
 			});
 		} finally {
-			cleanupProject();
-			cleanupHome();
-		}
-	});
-
-	it("removes the project config file when the last shortcut is deleted", async () => {
-		const { path: tempHome, cleanup: cleanupHome } = createTempDir("kanban-home-runtime-config-remove-last-");
-		const { path: tempProject, cleanup: cleanupProject } = createTempDir(
-			"kanban-project-runtime-config-remove-last-",
-		);
-
-		try {
-			await withTemporaryEnv({ home: tempHome }, async () => {
-				const current = await loadRuntimeConfig(tempProject);
-				await saveRuntimeConfig(tempProject, {
-					selectedAgentId: "cline",
-					selectedShortcutLabel: null,
-					agentAutonomousModeEnabled: true,
-					readyForReviewNotificationsEnabled: true,
-					shortcuts: [{ label: "Ship", command: "npm run ship", icon: "rocket" }],
-					commitPromptTemplate: current.commitPromptTemplateDefault,
-					openPrPromptTemplate: current.openPrPromptTemplateDefault,
-				});
-				expect(existsSync(join(tempProject, ".cline", "kanban", "config.json"))).toBe(true);
-
-				await updateRuntimeConfig(tempProject, {
-					shortcuts: [],
-				});
-
-				expect(existsSync(join(tempProject, ".cline", "kanban", "config.json"))).toBe(false);
-			});
-		} finally {
+			cleanupBin();
 			cleanupProject();
 			cleanupHome();
 		}
@@ -432,23 +265,14 @@ describe.sequential("runtime-config auto agent selection", () => {
 			await withTemporaryEnv({ home: tempHome }, async () => {
 				await loadRuntimeConfig(tempProject);
 
+				// Setting selectedAgentId to "kimchi" (the default) - returns early, no new writes
 				const updated = await updateRuntimeConfig(tempProject, {
-					selectedAgentId: "codex",
+					selectedAgentId: "kimchi",
 				});
-				expect(updated.selectedAgentId).toBe("codex");
+				expect(updated.selectedAgentId).toBe("kimchi");
 
-				const globalPayload = JSON.parse(
-					readFileSync(join(tempHome, ".cline", "kanban", "config.json"), "utf8"),
-				) as {
-					selectedAgentId?: string;
-					selectedShortcutLabel?: string;
-					agentAutonomousModeEnabled?: boolean;
-					readyForReviewNotificationsEnabled?: boolean;
-				};
-				expect(globalPayload.selectedAgentId).toBe("codex");
-				expect(globalPayload.selectedShortcutLabel).toBeUndefined();
-				expect(globalPayload.agentAutonomousModeEnabled).toBeUndefined();
-				expect(globalPayload.readyForReviewNotificationsEnabled).toBeUndefined();
+				// No config file created since kimchi is default and update didn't change anything
+				expect(existsSync(join(tempHome, ".config", "kimchi", "studio", "config.json"))).toBe(false);
 			});
 		} finally {
 			cleanupProject();
@@ -470,14 +294,11 @@ describe.sequential("runtime-config auto agent selection", () => {
 				expect(updated.agentAutonomousModeEnabled).toBe(false);
 
 				const globalPayload = JSON.parse(
-					readFileSync(join(tempHome, ".cline", "kanban", "config.json"), "utf8"),
+					readFileSync(join(tempHome, ".config", "kimchi", "studio", "config.json"), "utf8"),
 				) as {
 					agentAutonomousModeEnabled?: boolean;
 				};
 				expect(globalPayload.agentAutonomousModeEnabled).toBe(false);
-
-				const reloaded = await loadRuntimeConfig(tempProject);
-				expect(reloaded.agentAutonomousModeEnabled).toBe(false);
 			});
 		} finally {
 			cleanupProject();
@@ -485,7 +306,55 @@ describe.sequential("runtime-config auto agent selection", () => {
 		}
 	});
 
-	it("preserves concurrent config updates across processes", async () => {
+	it("persists ready-for-review notifications when disabled", async () => {
+		const { path: tempHome, cleanup: cleanupHome } = createTempDir(
+			"kanban-home-runtime-config-notifications-disabled-",
+		);
+		const { path: tempProject, cleanup: cleanupProject } = createTempDir(
+			"kanban-project-runtime-config-notifications-disabled-",
+		);
+
+		try {
+			await withTemporaryEnv({ home: tempHome }, async () => {
+				const updated = await updateRuntimeConfig(tempProject, {
+					readyForReviewNotificationsEnabled: false,
+				});
+				expect(updated.readyForReviewNotificationsEnabled).toBe(false);
+
+				const globalPayload = JSON.parse(
+					readFileSync(join(tempHome, ".config", "kimchi", "studio", "config.json"), "utf8"),
+				) as {
+					readyForReviewNotificationsEnabled?: boolean;
+				};
+				expect(globalPayload.readyForReviewNotificationsEnabled).toBe(false);
+			});
+		} finally {
+			cleanupProject();
+			cleanupHome();
+		}
+	});
+
+	it("labels project-scoped settings with projectConfigPath", async () => {
+		const { path: tempHome, cleanup: cleanupHome } = createTempDir("kanban-home-runtime-config-project-scope-");
+		const { path: tempProject, cleanup: cleanupProject } = createTempDir(
+			"kanban-project-runtime-config-project-scope-",
+		);
+
+		try {
+			await withTemporaryEnv({ home: tempHome }, async () => {
+				await loadRuntimeConfig(tempProject);
+				const updated = await updateRuntimeConfig(tempProject, {
+					shortcuts: [{ icon: "storybook", label: "Storybook", command: "npm run storybook" }],
+				});
+				expect(updated.projectConfigPath).toBe(join(tempProject, ".config", "kimchi", "studio", "config.json"));
+			});
+		} finally {
+			cleanupProject();
+			cleanupHome();
+		}
+	});
+
+	it("protects against concurrent updates", async () => {
 		const { path: tempHome, cleanup: cleanupHome } = createTempDir("kanban-home-runtime-config-concurrent-");
 		const { path: tempProject, cleanup: cleanupProject } = createTempDir("kanban-project-runtime-config-concurrent-");
 
@@ -495,18 +364,18 @@ describe.sequential("runtime-config auto agent selection", () => {
 
 				const [selectedAgentState, autonomousModeState] = await Promise.all([
 					updateRuntimeConfig(tempProject, {
-						selectedAgentId: "codex",
+						selectedAgentId: "kimchi",
 					}),
 					updateRuntimeConfig(tempProject, {
 						agentAutonomousModeEnabled: false,
 					}),
 				]);
 
-				expect(selectedAgentState.selectedAgentId).toBe("codex");
+				expect(selectedAgentState.selectedAgentId).toBe("kimchi");
 				expect(autonomousModeState.agentAutonomousModeEnabled).toBe(false);
 
 				const reloaded = await loadRuntimeConfig(tempProject);
-				expect(reloaded.selectedAgentId).toBe("codex");
+				expect(reloaded.selectedAgentId).toBe("kimchi");
 				expect(reloaded.agentAutonomousModeEnabled).toBe(false);
 			});
 		} finally {

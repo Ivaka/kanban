@@ -4,10 +4,8 @@
 import { readFile, rm } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
-import { getRuntimeAgentCatalogEntry, isRuntimeAgentLaunchSupported } from "../core/agent-catalog";
 import type { RuntimeAgentId, RuntimeProjectShortcut } from "../core/api-contract";
 import { type LockRequest, lockedFileSystem } from "../fs/locked-file-system";
-import { detectInstalledCommands } from "../terminal/agent-registry";
 import { areRuntimeProjectShortcutsEqual } from "./shortcut-utils";
 
 interface RuntimeGlobalConfigFileShape {
@@ -47,16 +45,10 @@ export interface RuntimeConfigUpdateInput {
 	openPrPromptTemplate?: string;
 }
 
-const RUNTIME_HOME_PARENT_DIR = ".cline";
-const RUNTIME_HOME_DIR = "kanban";
-const CONFIG_FILENAME = "config.json";
-const PROJECT_CONFIG_PARENT_DIR = ".cline";
-const PROJECT_CONFIG_DIR = "kanban";
-const PROJECT_CONFIG_FILENAME = "config.json";
-const DEFAULT_AGENT_ID: RuntimeAgentId = "cline";
-const AUTO_SELECT_AGENT_PRIORITY: readonly RuntimeAgentId[] = ["claude", "codex", "droid", "kiro", "kimchi"];
+const DEFAULT_AGENT_ID: RuntimeAgentId = "kimchi";
 const DEFAULT_AGENT_AUTONOMOUS_MODE_ENABLED = true;
 const DEFAULT_READY_FOR_REVIEW_NOTIFICATIONS_ENABLED = true;
+
 const DEFAULT_COMMIT_PROMPT_TEMPLATE = `You are in a worktree on a detached HEAD. When you are finished with the task, commit the working changes onto {{base_ref}}.
 
 - Do not run destructive commands: git reset --hard, git clean -fdx, git worktree remove, rm/mv on repository paths.
@@ -81,6 +73,7 @@ Steps:
    - Whether stash was used
    - Whether conflicts were resolved
    - Any remaining manual follow-up needed`;
+
 const DEFAULT_OPEN_PR_PROMPT_TEMPLATE = `You are in a worktree on a detached HEAD. When you are finished with the task, open a pull request against {{base_ref}}.
 
 - Do not run destructive commands: git reset --hard, git clean -fdx, git worktree remove, rm/mv on repository paths.
@@ -100,41 +93,8 @@ Steps:
    - Head branch
    - Any follow-up needed`;
 
-export function pickBestInstalledAgentIdFromDetected(detectedCommands: readonly string[]): RuntimeAgentId | null {
-	const detected = new Set(detectedCommands);
-	for (const agentId of AUTO_SELECT_AGENT_PRIORITY) {
-		const catalogEntry = getRuntimeAgentCatalogEntry(agentId);
-		const binary = catalogEntry?.binary ?? agentId;
-		if (detected.has(binary) || detected.has(agentId)) {
-			return agentId;
-		}
-	}
-	return null;
-}
-
 function getRuntimeHomePath(): string {
-	return join(homedir(), RUNTIME_HOME_PARENT_DIR, RUNTIME_HOME_DIR);
-}
-
-function normalizeAgentId(agentId: RuntimeAgentId | string | null | undefined): RuntimeAgentId {
-	if (
-		(agentId === "claude" ||
-			agentId === "codex" ||
-			agentId === "gemini" ||
-			agentId === "opencode" ||
-			agentId === "droid" ||
-			agentId === "kiro" ||
-			agentId === "cline" ||
-			agentId === "kimchi") &&
-		isRuntimeAgentLaunchSupported(agentId)
-	) {
-		return agentId;
-	}
-	return DEFAULT_AGENT_ID;
-}
-
-function pickBestInstalledAgentId(): RuntimeAgentId | null {
-	return pickBestInstalledAgentIdFromDetected(detectInstalledCommands());
+	return join(homedir(), ".config", "kimchi", "studio");
 }
 
 function normalizeShortcut(shortcut: RuntimeProjectShortcut): RuntimeProjectShortcut | null {
@@ -202,11 +162,11 @@ function hasOwnKey<T extends object>(value: T | null, key: keyof T): boolean {
 }
 
 export function getRuntimeGlobalConfigPath(): string {
-	return join(getRuntimeHomePath(), CONFIG_FILENAME);
+	return join(getRuntimeHomePath(), "config.json");
 }
 
 export function getRuntimeProjectConfigPath(cwd: string): string {
-	return join(resolve(cwd), PROJECT_CONFIG_PARENT_DIR, PROJECT_CONFIG_DIR, PROJECT_CONFIG_FILENAME);
+	return join(resolve(cwd), ".config", "kimchi", "studio", "config.json");
 }
 
 interface RuntimeConfigPaths {
@@ -274,7 +234,7 @@ function toRuntimeConfigState({
 	return {
 		globalConfigPath,
 		projectConfigPath,
-		selectedAgentId: normalizeAgentId(globalConfig?.selectedAgentId),
+		selectedAgentId: DEFAULT_AGENT_ID,
 		selectedShortcutLabel: normalizeShortcutLabel(globalConfig?.selectedShortcutLabel),
 		agentAutonomousModeEnabled: normalizeBoolean(
 			globalConfig?.agentAutonomousModeEnabled,
@@ -316,10 +276,6 @@ async function writeRuntimeGlobalConfigFile(
 	},
 ): Promise<void> {
 	const existing = await readRuntimeConfigFile<RuntimeGlobalConfigFileShape>(configPath);
-	const selectedAgentId = config.selectedAgentId === undefined ? undefined : normalizeAgentId(config.selectedAgentId);
-	const existingSelectedAgentId = hasOwnKey(existing, "selectedAgentId")
-		? normalizeAgentId(existing?.selectedAgentId)
-		: undefined;
 	const selectedShortcutLabel =
 		config.selectedShortcutLabel === undefined ? undefined : normalizeShortcutLabel(config.selectedShortcutLabel);
 	const existingSelectedShortcutLabel = hasOwnKey(existing, "selectedShortcutLabel")
@@ -343,13 +299,6 @@ async function writeRuntimeGlobalConfigFile(
 			: normalizePromptTemplate(config.openPrPromptTemplate, DEFAULT_OPEN_PR_PROMPT_TEMPLATE);
 
 	const payload: RuntimeGlobalConfigFileShape = {};
-	if (selectedAgentId !== undefined) {
-		if (hasOwnKey(existing, "selectedAgentId") || selectedAgentId !== DEFAULT_AGENT_ID) {
-			payload.selectedAgentId = selectedAgentId;
-		}
-	} else if (existingSelectedAgentId !== undefined) {
-		payload.selectedAgentId = existingSelectedAgentId;
-	}
 	if (selectedShortcutLabel !== undefined) {
 		if (selectedShortcutLabel) {
 			payload.selectedShortcutLabel = selectedShortcutLabel;
@@ -434,15 +383,10 @@ async function readRuntimeConfigFiles(cwd: string | null): Promise<RuntimeConfig
 async function loadRuntimeConfigLocked(cwd: string | null): Promise<RuntimeConfigState> {
 	const configFiles = await readRuntimeConfigFiles(cwd);
 	if (configFiles.globalConfig === null) {
-		const autoSelectedAgentId = pickBestInstalledAgentId();
-		if (autoSelectedAgentId) {
-			await writeRuntimeGlobalConfigFile(configFiles.globalConfigPath, {
-				selectedAgentId: autoSelectedAgentId,
-			});
-			configFiles.globalConfig = {
-				selectedAgentId: autoSelectedAgentId,
-			};
-		}
+		// Default to kimchi without persisting to config file
+		configFiles.globalConfig = {
+			selectedAgentId: DEFAULT_AGENT_ID,
+		};
 	}
 	return toRuntimeConfigState(configFiles);
 }
@@ -461,7 +405,7 @@ function createRuntimeConfigStateFromValues(input: {
 	return {
 		globalConfigPath: input.globalConfigPath,
 		projectConfigPath: input.projectConfigPath,
-		selectedAgentId: normalizeAgentId(input.selectedAgentId),
+		selectedAgentId: DEFAULT_AGENT_ID,
 		selectedShortcutLabel: normalizeShortcutLabel(input.selectedShortcutLabel),
 		agentAutonomousModeEnabled: normalizeBoolean(
 			input.agentAutonomousModeEnabled,

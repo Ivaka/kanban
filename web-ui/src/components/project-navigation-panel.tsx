@@ -4,7 +4,6 @@ import { ChevronDown, ChevronUp, Ellipsis, ExternalLink, Info, Lightbulb, Plus, 
 import { type MouseEvent as ReactMouseEvent, type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { canShowFeaturebaseFeedbackButton } from "@/components/featurebase-feedback-button";
 import { Button } from "@/components/ui/button";
-import { ClineIcon } from "@/components/ui/cline-icon";
 import { cn } from "@/components/ui/cn";
 import {
 	AlertDialog,
@@ -17,6 +16,7 @@ import {
 	AlertDialogTitle,
 } from "@/components/ui/dialog";
 import { Kbd } from "@/components/ui/kbd";
+import { KimchiIcon } from "@/components/ui/kimchi-icon";
 import { Spinner } from "@/components/ui/spinner";
 import type { FeaturebaseFeedbackState } from "@/hooks/use-featurebase-feedback-widget";
 import { useIsMobile } from "@/hooks/use-is-mobile";
@@ -34,8 +34,8 @@ import { useUnmount, useWindowEvent } from "@/utils/react-use";
 const COLLAPSED_WIDTH = 48;
 const SIDEBAR_COLLAPSE_THRESHOLD = 120;
 const SIDEBAR_MIN_EXPANDED_WIDTH = 200;
-const SIDEBAR_MAX_EXPANDED_WIDTH = 600;
-const GITHUB_ISSUES_URL = "https://github.com/cline/kanban/issues";
+const SIDEBAR_MAX_EXPANDED_WIDTH = 800;
+const GITHUB_ISSUES_URL = "https://github.com/castai/kimchi-agent-studio/issues";
 
 interface TaskCountBadge {
 	id: string;
@@ -299,8 +299,8 @@ export function ProjectNavigationPanel({
 			<div style={{ padding: "12px 12px 8px" }}>
 				<div className="flex items-center justify-between">
 					<div className="font-semibold text-base flex items-baseline gap-1.5">
-						<ClineIcon size={18} className="text-text-primary shrink-0 self-center" />
-						Cline <span className="text-text-secondary font-normal text-xs">v{__APP_VERSION__}</span>
+						<KimchiIcon className="text-text-primary shrink-0 self-center" />
+						Kimchi Studio <span className="text-text-secondary font-normal text-xs">v{__APP_VERSION__}</span>
 					</div>
 					{isMobile ? (
 						<Button
@@ -569,7 +569,7 @@ function ProjectSupportFooter({
 				<Info size={14} className="mt-px shrink-0 text-text-tertiary" />
 				<div className="flex flex-col gap-1.5">
 					<p className="m-0 text-xs text-text-secondary">
-						Kanban is in beta. Help us improve by sharing your experience.
+						Kimchi Studio is in early development stage. Help us improve by sharing your experience.
 					</p>
 					<button
 						type="button"

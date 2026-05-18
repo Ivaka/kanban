@@ -1,16 +1,10 @@
 import { act, useEffect } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { type UseStartupOnboardingResult, useStartupOnboarding } from "@/hooks/use-startup-onboarding";
 import type { RuntimeConfigResponse } from "@/runtime/types";
 import { LocalStorageKey } from "@/storage/local-storage-store";
-
-const saveRuntimeConfigMock = vi.hoisted(() => vi.fn());
-
-vi.mock("@/runtime/runtime-config-query", () => ({
-	saveRuntimeConfig: saveRuntimeConfigMock,
-}));
 
 type HookSnapshot = UseStartupOnboardingResult;
 
@@ -23,18 +17,10 @@ function createRuntimeConfigResponse(selectedAgentId: RuntimeConfigResponse["sel
 		globalConfigPath: "/tmp/.cline/kanban/config.json",
 		projectConfigPath: "/tmp/project/.cline/kanban/config.json",
 		readyForReviewNotificationsEnabled: true,
-		detectedCommands: ["codex"],
-		agents: [
-			{
-				id: "codex",
-				label: "OpenAI Codex",
-				binary: "codex",
-				command: "codex",
-				defaultArgs: [],
-				installed: true,
-				configured: selectedAgentId === "codex",
-			},
-		],
+		agentConfig: {
+			installed: true,
+			command: "kimchi",
+		},
 		shortcuts: [],
 		clineProviderSettings: {
 			providerId: null,
@@ -90,8 +76,6 @@ describe("useStartupOnboarding", () => {
 
 	beforeEach(() => {
 		window.localStorage.clear();
-		saveRuntimeConfigMock.mockReset();
-		saveRuntimeConfigMock.mockResolvedValue(createRuntimeConfigResponse("codex"));
 		previousActEnvironment = (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean })
 			.IS_REACT_ACT_ENVIRONMENT;
 		(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -139,35 +123,6 @@ describe("useStartupOnboarding", () => {
 		expect(snapshot.isStartupOnboardingDialogOpen).toBe(true);
 	});
 
-	it("saves the selected agent without requiring a project", async () => {
-		let latestSnapshot: HookSnapshot | null = null;
-
-		await act(async () => {
-			root.render(
-				<HookHarness
-					currentProjectId={null}
-					runtimeProjectConfig={createRuntimeConfigResponse("cline")}
-					isRuntimeProjectConfigLoading={false}
-					isTaskAgentReady={false}
-					onSnapshot={(snapshot) => {
-						latestSnapshot = snapshot;
-					}}
-				/>,
-			);
-			await Promise.resolve();
-		});
-
-		if (latestSnapshot === null) {
-			throw new Error("Expected a startup onboarding snapshot.");
-		}
-
-		const snapshot = latestSnapshot as HookSnapshot;
-		const result = await snapshot.handleSelectOnboardingAgent("codex");
-
-		expect(result).toEqual({ ok: true });
-		expect(saveRuntimeConfigMock).toHaveBeenCalledWith(null, { selectedAgentId: "codex" });
-	});
-
 	it("waits for runtime config to finish loading before opening onboarding", async () => {
 		let latestSnapshot: HookSnapshot | null = null;
 
@@ -202,7 +157,7 @@ describe("useStartupOnboarding", () => {
 			root.render(
 				<HookHarness
 					currentProjectId={"project-1"}
-					runtimeProjectConfig={createRuntimeConfigResponse("cline")}
+					runtimeProjectConfig={createRuntimeConfigResponse("kimchi")}
 					isRuntimeProjectConfigLoading={false}
 					isTaskAgentReady={false}
 					onSnapshot={(snapshot) => {
@@ -228,7 +183,7 @@ describe("useStartupOnboarding", () => {
 			root.render(
 				<HookHarness
 					currentProjectId={null}
-					runtimeProjectConfig={createRuntimeConfigResponse("cline")}
+					runtimeProjectConfig={createRuntimeConfigResponse("kimchi")}
 					isRuntimeProjectConfigLoading={false}
 					isTaskAgentReady={false}
 					onSnapshot={(snapshot) => {
@@ -262,7 +217,7 @@ describe("useStartupOnboarding", () => {
 			root.render(
 				<HookHarness
 					currentProjectId={"project-1"}
-					runtimeProjectConfig={createRuntimeConfigResponse("cline")}
+					runtimeProjectConfig={createRuntimeConfigResponse("kimchi")}
 					isRuntimeProjectConfigLoading={false}
 					isTaskAgentReady={false}
 					onSnapshot={(nextSnapshot) => {
@@ -289,7 +244,7 @@ describe("useStartupOnboarding", () => {
 			root.render(
 				<HookHarness
 					currentProjectId={"project-1"}
-					runtimeProjectConfig={createRuntimeConfigResponse("codex")}
+					runtimeProjectConfig={createRuntimeConfigResponse("kimchi")}
 					isRuntimeProjectConfigLoading={false}
 					isTaskAgentReady={true}
 					onSnapshot={(snapshot) => {

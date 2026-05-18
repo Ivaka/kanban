@@ -99,16 +99,6 @@ export function useHomeSidebarAgentPanel({
 		onSessionSummary: upsertSessionSummary,
 	});
 
-	const selectedAgentLabel = useMemo(() => {
-		if (!runtimeProjectConfig) {
-			return "selected agent";
-		}
-		return (
-			runtimeProjectConfig.agents.find((agent) => agent.id === runtimeProjectConfig.selectedAgentId)?.label ??
-			"selected agent"
-		);
-	}, [runtimeProjectConfig]);
-
 	const homeAgentPanelSummary = taskId ? (effectiveSessionSummaries[taskId] ?? null) : null;
 	const homeTaskChatMessages = taskId ? (taskChatMessagesByTaskId[taskId] ?? null) : null;
 	const latestHomeTaskChatMessage = selectLatestTaskChatMessageForTask(taskId, latestTaskChatMessage);
@@ -166,7 +156,7 @@ export function useHomeSidebarAgentPanel({
 				onLoadMessages={handleLoadHomeClineChatMessages}
 				incomingMessage={latestHomeTaskChatMessage}
 				incomingMessages={homeTaskChatMessages}
-				composerPlaceholder="Ask Cline to add, edit, start, or link tasks"
+				composerPlaceholder="Ask Kimchi to add, edit, start, or link tasks"
 			/>
 		);
 	}
@@ -188,17 +178,9 @@ export function useHomeSidebarAgentPanel({
 		);
 	}
 
-	if (runtimeProjectConfig.selectedAgentId !== "cline") {
-		return (
-			<div className="flex w-full items-center justify-center rounded-md border border-border bg-surface-2 px-3 text-center text-sm text-text-secondary">
-				No runnable {selectedAgentLabel} command is configured. Open Settings, install the CLI, and select it.
-			</div>
-		);
-	}
-
 	return (
 		<div className="flex w-full items-center justify-center rounded-md border border-border bg-surface-2 px-3 text-center text-sm text-text-secondary">
-			Select a Cline provider in Settings to start a home chat session.
+			Kimchi is not configured.
 		</div>
 	);
 }

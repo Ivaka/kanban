@@ -1,7 +1,7 @@
 import type { RuntimeConfigState } from "../config/runtime-config";
-import { getRuntimeLaunchSupportedAgentCatalog, RUNTIME_AGENT_CATALOG } from "../core/agent-catalog";
+import { getRuntimeLaunchSupportedAgentCatalog, KIMCHI_AGENT_CONFIG } from "../core/agent-catalog";
 import type {
-	RuntimeAgentDefinition,
+	RuntimeAgentConfig,
 	RuntimeAgentId,
 	RuntimeClineProviderSettings,
 	RuntimeConfigResponse,
@@ -16,12 +16,12 @@ export interface ResolvedAgentCommand {
 	args: string[];
 }
 
-function getDefaultArgs(agentId: RuntimeAgentId): string[] {
-	const entry = RUNTIME_AGENT_CATALOG.find((candidate) => candidate.id === agentId);
-	if (!entry) {
-		return [];
-	}
-	return [...entry.baseArgs];
+function getConfig() {
+	return KIMCHI_AGENT_CONFIG;
+}
+
+function getDefaultArgs(_agentId: string): string[] {
+	return [...getConfig().baseArgs];
 }
 
 function quoteForDisplay(part: string): string {
@@ -48,35 +48,12 @@ function isRuntimeDebugModeEnabled(): boolean {
 	return parseBooleanEnvValue(debugModeValue);
 }
 
-export function detectInstalledCommands(): string[] {
-	const candidates = [...RUNTIME_AGENT_CATALOG.map((entry) => entry.binary), "npx"];
-	const detected: string[] = [];
+function getKimchiAgentConfig(): RuntimeAgentConfig {
+	const config = getConfig();
+	const installed = isBinaryAvailableOnPath(config.binary);
+	const command = installed ? joinCommand(config.binary, config.baseArgs) : null;
 
-	for (const candidate of candidates) {
-		if (isBinaryAvailableOnPath(candidate)) {
-			detected.push(candidate);
-		}
-	}
-
-	return detected;
-}
-
-function getCuratedDefinitions(runtimeConfig: RuntimeConfigState, detected: string[]): RuntimeAgentDefinition[] {
-	const detectedSet = new Set(detected);
-	return getRuntimeLaunchSupportedAgentCatalog().map((entry) => {
-		const defaultArgs = getDefaultArgs(entry.id);
-		const command = joinCommand(entry.binary, defaultArgs);
-		const isInstalled = entry.id === "cline" ? true : detectedSet.has(entry.binary);
-		return {
-			id: entry.id,
-			label: entry.label,
-			binary: entry.binary,
-			command,
-			defaultArgs,
-			installed: isInstalled,
-			configured: runtimeConfig.selectedAgentId === entry.id,
-		};
-	});
+	return { installed, command };
 }
 
 export function resolveAgentCommand(runtimeConfig: RuntimeConfigState): ResolvedAgentCommand | null {
@@ -102,8 +79,7 @@ export function buildRuntimeConfigResponse(
 	runtimeConfig: RuntimeConfigState,
 	clineProviderSettings: RuntimeClineProviderSettings,
 ): RuntimeConfigResponse {
-	const detectedCommands = detectInstalledCommands();
-	const agents = getCuratedDefinitions(runtimeConfig, detectedCommands);
+	const agentConfig = getKimchiAgentConfig();
 	const resolved = resolveAgentCommand(runtimeConfig);
 	const effectiveCommand = resolved ? joinCommand(resolved.binary, resolved.args) : null;
 
@@ -116,8 +92,7 @@ export function buildRuntimeConfigResponse(
 		globalConfigPath: runtimeConfig.globalConfigPath,
 		projectConfigPath: runtimeConfig.projectConfigPath,
 		readyForReviewNotificationsEnabled: runtimeConfig.readyForReviewNotificationsEnabled,
-		detectedCommands,
-		agents,
+		agentConfig,
 		shortcuts: runtimeConfig.shortcuts,
 		clineProviderSettings,
 		commitPromptTemplate: runtimeConfig.commitPromptTemplate,
