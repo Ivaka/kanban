@@ -34,7 +34,14 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { TASK_GIT_BASE_REF_PROMPT_VARIABLE, type TaskGitAction } from "@/git-actions/build-task-git-action-prompt";
 import { useRuntimeSettingsClineController } from "@/hooks/use-runtime-settings-cline-controller";
 import { useRuntimeSettingsClineMcpController } from "@/hooks/use-runtime-settings-cline-mcp-controller";
-import { previewThemeId, readStoredThemeId, saveThemeId, THEME_GROUPS, THEMES, type ThemeId } from "@/hooks/use-theme";
+import {
+	previewThemeId,
+	readStoredThemeId,
+	saveThemeId,
+	THEME_COLOR_SWATCHES,
+	THEME_GROUPS,
+	type ThemeId,
+} from "@/hooks/use-theme";
 import { useLayoutCustomizations } from "@/resize/layout-customizations";
 import { openFileOnHost } from "@/runtime/runtime-config-query";
 import type { RuntimeClineMcpServerAuthStatus, RuntimeConfigResponse, RuntimeProjectShortcut } from "@/runtime/types";
@@ -265,8 +272,8 @@ export function RuntimeSettingsDialog({
 	const { resetLayoutCustomizations } = useLayoutCustomizations();
 	const [agentAutonomousModeEnabled, setAgentAutonomousModeEnabled] = useState(true);
 	const [readyForReviewNotificationsEnabled, setReadyForReviewNotificationsEnabled] = useState(true);
-	const [initialThemeId, setInitialThemeId] = useState<ThemeId>(readStoredThemeId);
-	const [draftThemeId, setDraftThemeId] = useState<ThemeId>(readStoredThemeId);
+	const [initialThemeId, setInitialThemeId] = useState<string>(readStoredThemeId);
+	const [draftThemeId, setDraftThemeId] = useState<string>(readStoredThemeId);
 	const [notificationPermission, setNotificationPermission] = useState<BrowserNotificationPermission>("unsupported");
 	const [shortcuts, setShortcuts] = useState<RuntimeProjectShortcut[]>([]);
 	const [commitPromptTemplate, setCommitPromptTemplate] = useState("");
@@ -599,7 +606,7 @@ export function RuntimeSettingsDialog({
 		[draftThemeId, onOpenChange],
 	);
 
-	const currentThemeDef = THEMES.find((t) => t.id === draftThemeId);
+	const currentThemeDef = THEME_COLOR_SWATCHES.find((t) => t.id === draftThemeId);
 
 	return (
 		<Dialog open={open} onOpenChange={handleDialogOpenChange} contentClassName="!max-w-[780px]">
@@ -829,7 +836,7 @@ export function RuntimeSettingsDialog({
 									>
 										<RadixSelect.Viewport>
 											{THEME_GROUPS.map((group) => {
-												const groupThemes = THEMES.filter((t) => t.group === group.key);
+												const groupThemes = THEME_COLOR_SWATCHES.filter((t) => t.group === group.key);
 												if (groupThemes.length === 0) return null;
 												return (
 													<RadixSelect.Group key={group.key}>

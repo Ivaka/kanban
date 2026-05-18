@@ -294,16 +294,16 @@ describe("RuntimeSettingsDialog", () => {
 		expect(themeSelectTrigger?.parentElement?.parentElement?.className).toContain("w-1/2");
 
 		// The mock Radix Select renders items as buttons with role="option".
-		// Click the Graphite option to trigger onValueChange.
-		const graphiteOption = Array.from(document.querySelectorAll('[role="option"]')).find((el) =>
-			el.textContent?.includes("Graphite"),
+		// Click the Light option to trigger onValueChange.
+		const lightOption = Array.from(document.querySelectorAll('[role="option"]')).find((el) =>
+			el.textContent?.includes("Light"),
 		) as HTMLElement | undefined;
-		expect(graphiteOption).toBeTruthy();
+		expect(lightOption).toBeTruthy();
 		await act(async () => {
-			graphiteOption?.click();
+			lightOption?.click();
 		});
 
-		expect(document.documentElement.getAttribute("data-theme")).toBe("graphite");
+		expect(document.documentElement.getAttribute("data-theme")).toBe("light");
 		expect(saveButton?.disabled).toBe(false);
 		expect(window.localStorage.getItem("kanban.theme")).toBeNull();
 
@@ -333,13 +333,13 @@ describe("RuntimeSettingsDialog", () => {
 
 		expect(saveButton).toBeInstanceOf(HTMLButtonElement);
 
-		// Click the Graphite option to trigger onValueChange.
-		const graphiteOption = Array.from(document.querySelectorAll('[role="option"]')).find((el) =>
-			el.textContent?.includes("Graphite"),
+		// Click the Light option to trigger onValueChange.
+		const lightOption = Array.from(document.querySelectorAll('[role="option"]')).find((el) =>
+			el.textContent?.includes("Light"),
 		) as HTMLElement | undefined;
-		expect(graphiteOption).toBeTruthy();
+		expect(lightOption).toBeTruthy();
 		await act(async () => {
-			graphiteOption?.click();
+			lightOption?.click();
 		});
 
 		expect(window.localStorage.getItem("kanban.theme")).toBeNull();
@@ -349,8 +349,8 @@ describe("RuntimeSettingsDialog", () => {
 		});
 
 		expect(handleOpenChange).toHaveBeenCalledWith(false);
-		expect(window.localStorage.getItem("kanban.theme")).toBe("graphite");
-		expect(document.documentElement.getAttribute("data-theme")).toBe("graphite");
+		expect(window.localStorage.getItem("kanban.theme")).toBe("light");
+		expect(document.documentElement.getAttribute("data-theme")).toBe("light");
 	});
 
 	it("forwards cline setup saves to the dialog onSaved callback", async () => {

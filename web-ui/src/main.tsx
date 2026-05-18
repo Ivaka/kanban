@@ -5,7 +5,7 @@ import App from "@/App";
 import { AppErrorBoundary } from "@/components/app-error-boundary";
 import { PasscodeGateProvider } from "@/components/passcode-gate";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { isThemeId } from "@/hooks/use-theme";
+import { initializeTheme } from "@/hooks/use-theme";
 import { TelemetryProvider } from "@/telemetry/posthog-provider";
 import { initializeSentry } from "@/telemetry/sentry";
 import "@/styles/globals.css";
@@ -13,14 +13,7 @@ import "@/styles/globals.css";
 initializeSentry();
 
 // Apply the persisted theme synchronously before first paint to prevent a flash.
-try {
-	const _savedTheme = localStorage.getItem("kanban.theme");
-	if (isThemeId(_savedTheme) && _savedTheme !== "default") {
-		document.documentElement.setAttribute("data-theme", _savedTheme);
-	}
-} catch {
-	// Ignore storage access failures and keep the default theme.
-}
+initializeTheme();
 
 const root = document.getElementById("root");
 if (!root) {
@@ -38,8 +31,8 @@ ReactDOM.createRoot(root).render(
 						position="bottom-right"
 						toastOptions={{
 							style: {
-								background: "var(--color-surface-1)",
-								border: "1px solid var(--color-border)",
+								background: "var(--color-bg-surface)",
+								border: "1px solid var(--color-border-default)",
 								color: "var(--color-text-primary)",
 								fontSize: "13px",
 								whiteSpace: "pre-line",

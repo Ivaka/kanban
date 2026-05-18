@@ -541,10 +541,11 @@ export function BoardCard({
 					>
 						<div
 							className={cn(
-								"rounded-md border border-border-bright bg-surface-2 p-2.5",
-								isCardInteractive && "cursor-pointer hover:bg-surface-3 hover:border-border-bright",
+								"rounded-md border border-border-subtle bg-surface-2 p-2.5 shadow-sm",
+								isCardInteractive &&
+									"cursor-pointer hover:bg-surface-3 hover:border-border-default hover:shadow",
 								isDragging && "shadow-lg",
-								isHovered && isCardInteractive && "bg-surface-3 border-border-bright",
+								isHovered && isCardInteractive && "bg-surface-3 border-border-default",
 								isDependencySource && "kb-board-card-dependency-source",
 								isDependencyTarget && "kb-board-card-dependency-target",
 							)}

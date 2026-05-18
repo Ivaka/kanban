@@ -39,8 +39,8 @@ export function usePersistentTerminalSession({
 	terminalBackgroundColor,
 	cursorColor,
 }: UsePersistentTerminalSessionInput): UsePersistentTerminalSessionResult {
-	const { themeId } = useTheme();
-	const themeColors = useMemo(() => getTerminalThemeColors(themeId), [themeId]);
+	const { mode } = useTheme();
+	const themeColors = useMemo(() => getTerminalThemeColors(mode), [mode]);
 	const containerRef = useRef<HTMLDivElement | null>(null);
 	const terminalRef = useRef<ReturnType<typeof ensurePersistentTerminal> | null>(null);
 	const callbackRef = useRef<{

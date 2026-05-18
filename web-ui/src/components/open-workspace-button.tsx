@@ -13,12 +13,12 @@ function OpenTargetIcon({ option }: { option: OpenTargetOption }): React.ReactEl
 			src={option.iconSrc}
 			alt=""
 			aria-hidden
+			className="kb-open-target-icon"
 			style={{
 				width: 14,
 				height: 14,
 				display: "block",
 				objectFit: "contain",
-				filter: "brightness(0) invert(1)",
 				opacity: 0.9,
 			}}
 		/>

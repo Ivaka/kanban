@@ -13,13 +13,29 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 	fill?: boolean;
 }
 
+/**
+ * Standardized button variants.
+ *
+ * - primary: Main CTA - solid brand color, no border
+ * - default: Secondary action - subtle border + background
+ * - danger: Destructive action - subtle error border
+ * - ghost: Low emphasis - transparent, appears on hover
+ */
 const variantStyles: Record<ButtonVariant, string> = {
+	// Primary: Solid brand for main CTAs
+	primary:
+		"bg-action-brand text-action-brand-text border-0 shadow-sm hover:bg-action-brand-hover hover:shadow-md active:shadow-sm active:translate-y-px",
+
+	// Default: Secondary with subtle border
 	default:
-		"bg-surface-2 border border-border-bright text-text-primary hover:bg-surface-3 hover:border-border-bright active:bg-surface-4",
-	primary: "bg-accent text-accent-fg border border-transparent hover:bg-accent-hover active:brightness-90",
+		"bg-bg-surface border border-border-default text-text-primary shadow-sm hover:border-border-emphasis hover:bg-bg-tag hover:shadow active:bg-bg-sidebar active:shadow-sm",
+
+	// Danger: Destructive with error accent
 	danger:
-		"bg-status-red/10 text-status-red border border-status-red/30 hover:bg-status-red/20 active:bg-status-red/30",
-	ghost: "bg-transparent text-text-secondary border border-transparent hover:text-text-primary hover:bg-surface-3 active:bg-surface-4",
+		"bg-bg-surface border border-status-error/40 text-status-error shadow-sm hover:bg-status-error-bg hover:border-status-error/60 hover:shadow active:bg-status-error/20 active:shadow-sm",
+
+	// Ghost: Transparent, for toolbars and subtle actions
+	ghost: "bg-transparent border-0 text-text-secondary hover:text-text-primary hover:bg-surface-3 active:bg-surface-4",
 };
 
 const sizeStyles: Record<ButtonSize, string> = {
@@ -40,8 +56,9 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
 			type={buttonType}
 			className={cn(
 				"inline-flex items-center justify-center rounded-md font-medium cursor-pointer select-none",
-				"disabled:opacity-40 disabled:pointer-events-none",
-				"focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent",
+				"disabled:opacity-40 disabled:pointer-events-none disabled:shadow-none",
+				"focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-action-brand",
+				"transition-all duration-150 ease-out",
 				variantStyles[variant],
 				sizeStyles[size],
 				fill && "w-full",

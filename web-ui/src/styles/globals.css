@@ -1,290 +1,438 @@
 @import "tailwindcss";
 
-@theme {
-	/* Surface hierarchy */
-	--color-surface-0: #1F2428;
-	--color-surface-1: #24292E;
-	--color-surface-2: #2D3339;
-	--color-surface-3: #353C43;
-	--color-surface-4: #3E464E;
+/* ============================================================================
+   PRIMITIVE COLOR SCALES
+   8 color families × 9 stops each (50-800)
+   ============================================================================ */
 
-	/* Borders */
-	--color-border: #30363D;
-	--color-border-bright: #444C56;
-	--color-border-focus: #0084FF;
-	--color-divider: #141820;
+:root {
+	/* Grey */
+	--primitive-grey-50: #ededed;
+	--primitive-grey-100: #e3e3e3;
+	--primitive-grey-200: #bdbdbd;
+	--primitive-grey-300: #a1a1a1;
+	--primitive-grey-400: #828282;
+	--primitive-grey-500: #626262;
+	--primitive-grey-600: #474747;
+	--primitive-grey-700: #292929;
+	--primitive-grey-800: #181818;
+
+	/* Orange (Brand) */
+	--primitive-orange-50: #ffece5;
+	--primitive-orange-100: #ffd2c6;
+	--primitive-orange-200: #ffa289;
+	--primitive-orange-300: #ff8463;
+	--primitive-orange-400: #f4572e;
+	--primitive-orange-500: #ac4225;
+	--primitive-orange-600: #7c2d18;
+	--primitive-orange-700: #4b190b;
+	--primitive-orange-800: #2e0c04;
+
+	/* Teal (Success) */
+	--primitive-teal-50: #dbf5f5;
+	--primitive-teal-100: #aaf0f0;
+	--primitive-teal-200: #85dede;
+	--primitive-teal-300: #36c3c4;
+	--primitive-teal-400: #009293;
+	--primitive-teal-500: #006f6f;
+	--primitive-teal-600: #005151;
+	--primitive-teal-700: #002f30;
+	--primitive-teal-800: #001c1c;
+
+	/* Pink */
+	--primitive-pink-50: #ffe5ee;
+	--primitive-pink-100: #ffcada;
+	--primitive-pink-200: #ffa1c0;
+	--primitive-pink-300: #ff72a5;
+	--primitive-pink-400: #e54786;
+	--primitive-pink-500: #b91e64;
+	--primitive-pink-600: #8c0f49;
+	--primitive-pink-700: #55072a;
+	--primitive-pink-800: #350318;
+
+	/* Blue */
+	--primitive-blue-50: #ebeeff;
+	--primitive-blue-100: #ccd3ff;
+	--primitive-blue-200: #9aa9ff;
+	--primitive-blue-300: #7885fc;
+	--primitive-blue-400: #407cf8;
+	--primitive-blue-500: #2856b9;
+	--primitive-blue-600: #193887;
+	--primitive-blue-700: #0e2055;
+	--primitive-blue-800: #06163b;
+
+	/* Green (Yellow in reference) */
+	--primitive-green-50: #eff7ca;
+	--primitive-green-100: #d9ef92;
+	--primitive-green-200: #c3e25b;
+	--primitive-green-300: #a3c256;
+	--primitive-green-400: #79b026;
+	--primitive-green-500: #5c871d;
+	--primitive-green-600: #37530e;
+	--primitive-green-700: #1f3105;
+	--primitive-green-800: #111e02;
+
+	/* Purple */
+	--primitive-purple-50: #f0ebff;
+	--primitive-purple-100: #dbd3ff;
+	--primitive-purple-200: #bcabff;
+	--primitive-purple-300: #c9b3ff;
+	--primitive-purple-400: #8e5fff;
+	--primitive-purple-500: #7c5cff;
+	--primitive-purple-600: #5f3dd0;
+	--primitive-purple-700: #42289e;
+	--primitive-purple-800: #1f0866;
+
+	/* Yellow */
+	--primitive-yellow-50: #f8f1d3;
+	--primitive-yellow-100: #f8eab0;
+	--primitive-yellow-200: #fbe998;
+	--primitive-yellow-300: #ffdc42;
+	--primitive-yellow-400: #d9b413;
+	--primitive-yellow-500: #87741d;
+	--primitive-yellow-600: #53460e;
+	--primitive-yellow-700: #312905;
+	--primitive-yellow-800: #1e1902;
+
+	/* Base radius */
+	--radius: 0.875rem;
+}
+
+/* ============================================================================
+   SEMANTIC THEME TOKENS
+   Private variables (--_*) hold values; exposed via @theme inline
+   ============================================================================ */
+
+/* Light Mode (default) - private variables on :root */
+:root {
+	/* Backgrounds */
+	--_bg-page: var(--color-grey-50);
+	--_bg-surface: #ffffff;
+	--_bg-surface-raised: #f8f9fa;
+	--_bg-sidebar: #ffffff;
+	--_bg-tag: var(--color-grey-100);
+	--_bg-input: #ffffff;
+	--_bg-surface-pressed: var(--color-grey-200);
+
+	/* Actions */
+	--_action-brand: var(--color-orange-400);
+	--_action-brand-hover: var(--color-orange-500);
+	--_action-brand-text: #ffffff;
+	--_action-primary: var(--color-grey-800);
+	--_action-primary-hover: var(--color-grey-700);
+	--_action-primary-text: #ffffff;
+	--_action-secondary: #ffffff;
+	--_action-secondary-hover: var(--color-grey-50);
+	--_action-secondary-border: var(--color-grey-200);
 
 	/* Text */
-	--color-text-primary: #E6EDF3;
-	--color-text-secondary: #8B949E;
-	--color-text-tertiary: #6E7681;
+	--_text-primary: var(--color-grey-800);
+	--_text-secondary: var(--color-grey-600);
+	--_text-tertiary: var(--color-grey-400);
+	--_text-disabled: var(--color-grey-300);
+	--_text-inverse: #ffffff;
+	--_text-accent: var(--color-orange-400);
+	--_text-link: var(--color-orange-500);
 
-	/* Accent / brand */
-	--color-accent: #0084FF;
-	--color-accent-hover: #339DFF;
-	--color-accent-fg: #FFFFFF;
-	--color-accent-2: #7C5CFF;
-	--color-accent-2-hover: #9B82FF;
-	--color-accent-2-fg: #FFFFFF;
+	/* Borders - hex primitives per styleguide */
+	--_border-subtle: var(--color-grey-100);
+	--_border-default: var(--color-grey-200);
+	--_border-emphasis: var(--color-grey-400);
+	--_border-accent: var(--color-orange-400);
 
-	/* Status colors */
-	--color-status-blue: #4C9AFF;
-	--color-status-green: #3FB950;
-	--color-status-orange: #D29922;
-	--color-status-red: #F85149;
-	--color-status-purple: #A371F7;
-	--color-status-gold: #D4A72C;
-	--color-status-violet: #8B5CF6;
-	--color-status-rose: #F43F5E;
-	--color-status-cyan: #06B6D4;
-	--color-status-lime: #84CC16;
+	/* Shadows - subtle elevation system */
+	--_shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+	--_shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+	--_shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+	--_shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+	--_shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+
+	/* Status - using primitive colors per styleguide */
+	--_status-success: var(--color-teal-400);
+	--_status-success-bg: var(--color-teal-50);
+	--_status-error: var(--color-orange-400);
+	--_status-error-bg: var(--color-orange-50);
+	--_status-warning: var(--color-yellow-400);
+	--_status-warning-bg: var(--color-yellow-50);
+	--_status-info: var(--color-blue-400);
+	--_status-info-bg: var(--color-blue-50);
+}
+
+/* Dark Mode - override private variables */
+.dark,
+html.dark,
+:root:has(.dark) {
+	/* Backgrounds */
+	--_bg-page: #1f2228;
+	--_bg-surface: #25262c;
+	--_bg-surface-raised: #2d2e34;
+	--_bg-sidebar: #1a1a1e;
+	--_bg-tag: var(--color-grey-700);
+	--_bg-input: #25262c;
+	--_bg-surface-pressed: var(--color-grey-600);
+
+	/* Actions */
+	--_action-brand: var(--color-orange-400);
+	--_action-brand-hover: var(--color-orange-500);
+	--_action-brand-text: #ffffff;
+	--_action-primary: #3d4149;
+	--_action-primary-hover: #4a4e56;
+	--_action-primary-text: #ffffff;
+	--_action-secondary: transparent;
+	--_action-secondary-hover: rgba(255, 255, 255, 0.18);
+	--_action-secondary-border: rgba(255, 255, 255, 0.15);
+
+	/* Text (brighter for better contrast) */
+	--_text-primary: #f5f5f5;
+	--_text-secondary: #c4c4c4;
+	--_text-tertiary: var(--color-grey-400);
+	--_text-disabled: var(--color-grey-600);
+	--_text-inverse: var(--color-grey-800);
+	--_text-accent: var(--color-orange-300);
+	--_text-link: var(--color-orange-200);
+
+	/* Borders - hex primitives per styleguide */
+	--_border-subtle: var(--color-grey-700);
+	--_border-default: var(--color-grey-600);
+	--_border-emphasis: var(--color-grey-500);
+	--_border-accent: var(--color-orange-400);
+
+	/* Shadows - slightly stronger in dark mode for visibility */
+	--_shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+	--_shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+	--_shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.4);
+	--_shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.6), 0 8px 10px -6px rgb(0 0 0 / 0.5);
+	--_shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.7);
+
+	/* Status backgrounds - using primitive colors per styleguide */
+	--_status-success-bg: var(--color-teal-800);
+	--_status-error-bg: var(--color-orange-800);
+	--_status-warning-bg: var(--color-yellow-800);
+	--_status-info-bg: var(--color-blue-800);
+}
+
+/* Register with Tailwind */
+@theme inline {
+	/* Primitive colors exposed as Tailwind colors */
+	--color-grey-50: var(--primitive-grey-50);
+	--color-grey-100: var(--primitive-grey-100);
+	--color-grey-200: var(--primitive-grey-200);
+	--color-grey-300: var(--primitive-grey-300);
+	--color-grey-400: var(--primitive-grey-400);
+	--color-grey-500: var(--primitive-grey-500);
+	--color-grey-600: var(--primitive-grey-600);
+	--color-grey-700: var(--primitive-grey-700);
+	--color-grey-800: var(--primitive-grey-800);
+
+	--color-orange-50: var(--primitive-orange-50);
+	--color-orange-100: var(--primitive-orange-100);
+	--color-orange-200: var(--primitive-orange-200);
+	--color-orange-300: var(--primitive-orange-300);
+	--color-orange-400: var(--primitive-orange-400);
+	--color-orange-500: var(--primitive-orange-500);
+	--color-orange-600: var(--primitive-orange-600);
+	--color-orange-700: var(--primitive-orange-700);
+	--color-orange-800: var(--primitive-orange-800);
+
+	--color-teal-50: var(--primitive-teal-50);
+	--color-teal-100: var(--primitive-teal-100);
+	--color-teal-200: var(--primitive-teal-200);
+	--color-teal-300: var(--primitive-teal-300);
+	--color-teal-400: var(--primitive-teal-400);
+	--color-teal-500: var(--primitive-teal-500);
+	--color-teal-600: var(--primitive-teal-600);
+	--color-teal-700: var(--primitive-teal-700);
+	--color-teal-800: var(--primitive-teal-800);
+
+	--color-pink-50: var(--primitive-pink-50);
+	--color-pink-100: var(--primitive-pink-100);
+	--color-pink-200: var(--primitive-pink-200);
+	--color-pink-300: var(--primitive-pink-300);
+	--color-pink-400: var(--primitive-pink-400);
+	--color-pink-500: var(--primitive-pink-500);
+	--color-pink-600: var(--primitive-pink-600);
+	--color-pink-700: var(--primitive-pink-700);
+	--color-pink-800: var(--primitive-pink-800);
+
+	--color-blue-50: var(--primitive-blue-50);
+	--color-blue-100: var(--primitive-blue-100);
+	--color-blue-200: var(--primitive-blue-200);
+	--color-blue-300: var(--primitive-blue-300);
+	--color-blue-400: var(--primitive-blue-400);
+	--color-blue-500: var(--primitive-blue-500);
+	--color-blue-600: var(--primitive-blue-600);
+	--color-blue-700: var(--primitive-blue-700);
+	--color-blue-800: var(--primitive-blue-800);
+
+	--color-green-50: var(--primitive-green-50);
+	--color-green-100: var(--primitive-green-100);
+	--color-green-200: var(--primitive-green-200);
+	--color-green-300: var(--primitive-green-300);
+	--color-green-400: var(--primitive-green-400);
+	--color-green-500: var(--primitive-green-500);
+	--color-green-600: var(--primitive-green-600);
+	--color-green-700: var(--primitive-green-700);
+	--color-green-800: var(--primitive-green-800);
+
+	--color-purple-50: var(--primitive-purple-50);
+	--color-purple-100: var(--primitive-purple-100);
+	--color-purple-200: var(--primitive-purple-200);
+	--color-purple-300: var(--primitive-purple-300);
+	--color-purple-400: var(--primitive-purple-400);
+	--color-purple-500: var(--primitive-purple-500);
+	--color-purple-600: var(--primitive-purple-600);
+	--color-purple-700: var(--primitive-purple-700);
+	--color-purple-800: var(--primitive-purple-800);
+
+	--color-yellow-50: var(--primitive-yellow-50);
+	--color-yellow-100: var(--primitive-yellow-100);
+	--color-yellow-200: var(--primitive-yellow-200);
+	--color-yellow-300: var(--primitive-yellow-300);
+	--color-yellow-400: var(--primitive-yellow-400);
+	--color-yellow-500: var(--primitive-yellow-500);
+	--color-yellow-600: var(--primitive-yellow-600);
+	--color-yellow-700: var(--primitive-yellow-700);
+	--color-yellow-800: var(--primitive-yellow-800);
+
+	/* Semantic tokens - reference private variables that change with .dark */
+	--color-bg-page: var(--_bg-page);
+	--color-bg-surface: var(--_bg-surface);
+	--color-bg-surface-raised: var(--_bg-surface-raised);
+	--color-bg-sidebar: var(--_bg-sidebar);
+	--color-bg-tag: var(--_bg-tag);
+	--color-bg-input: var(--_bg-input);
+	--color-bg-surface-pressed: var(--_bg-surface-pressed);
+	--color-action-brand: var(--_action-brand);
+	--color-action-brand-hover: var(--_action-brand-hover);
+	--color-action-brand-text: var(--_action-brand-text);
+	--color-action-primary: var(--_action-primary);
+	--color-action-primary-hover: var(--_action-primary-hover);
+	--color-action-primary-text: var(--_action-primary-text);
+	--color-action-secondary: var(--_action-secondary);
+	--color-action-secondary-hover: var(--_action-secondary-hover);
+	--color-action-secondary-border: var(--_action-secondary-border);
+	--color-text-primary: var(--_text-primary);
+	--color-text-secondary: var(--_text-secondary);
+	--color-text-tertiary: var(--_text-tertiary);
+	--color-text-disabled: var(--_text-disabled);
+	--color-text-inverse: var(--_text-inverse);
+	--color-text-accent: var(--_text-accent);
+	--color-text-link: var(--_text-link);
+	--color-border-subtle: var(--_border-subtle);
+	--color-border-default: var(--_border-default);
+	--color-border-emphasis: var(--_border-emphasis);
+	--color-border-accent: var(--_border-accent);
+	--color-status-success: var(--_status-success);
+	--color-status-success-bg: var(--_status-success-bg);
+	--color-status-error: var(--_status-error);
+	--color-status-error-bg: var(--_status-error-bg);
+	--color-status-warning: var(--_status-warning);
+	--color-status-warning-bg: var(--_status-warning-bg);
+	--color-status-info: var(--_status-info);
+	--color-status-info-bg: var(--_status-info-bg);
+
+	/* Shadow tokens */
+	--shadow-sm: var(--_shadow-sm);
+	--shadow-md: var(--_shadow-md);
+	--shadow-lg: var(--_shadow-lg);
+	--shadow-xl: var(--_shadow-xl);
+	--shadow-2xl: var(--_shadow-2xl);
+
+	/* Chart categorical palette */
+	--color-chart-1: #ff6433;
+	--color-chart-2: #c7ea0c;
+	--color-chart-3: #18cfff;
+	--color-chart-4: #7b59fb;
+	--color-chart-5: #d382f3;
+	--color-chart-6: #00ffb3;
+	--color-chart-7: #20c997;
+	--color-chart-8: #ec3f7d;
+	--color-chart-9: #f5d83d;
+	--color-chart-10: #00b1c9;
+	--color-chart-11: #bac3c8;
+	--color-chart-12: #79b026;
+	--color-chart-13: #d9ef92;
+	--color-chart-14: #009293;
+	--color-chart-15: #c9b3ff;
 
 	/* Typography */
 	--font-sans: "Geist", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 	--font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 
 	/* Border radius */
-	--radius-sm: 4px;
-	--radius-md: 6px;
-	--radius-lg: 8px;
-	--radius-xl: 12px;
-
+	--radius-sm: calc(var(--radius) - 4px);
+	--radius-md: calc(var(--radius) - 2px);
+	--radius-lg: var(--radius);
+	--radius-xl: calc(var(--radius) + 4px);
 }
 
-/* -- Theme overrides -------------------------------------------------- */
-/* Each [data-theme] block overrides only the structural palette;
-   status colors, typography, and border-radius stay constant.
-   Backgrounds are always neutral greys / black / white — accent colors
-   provide personality. */
+/* ============================================================================
+   LEGACY COMPATIBILITY LAYER
+   Maps old token names to new semantic tokens for gradual migration
+   TODO: Remove after all components migrated
+   ============================================================================ */
 
-/* --- Dark themes ----------------------------------------------------- */
+@theme {
+	/* Surface mappings */
+	--color-surface-0: var(--color-bg-page);
+	--color-surface-1: var(--color-bg-surface);
+	--color-surface-2: var(--color-bg-surface-raised);
+	--color-surface-3: var(--color-bg-tag);
+	--color-surface-4: var(--_bg-surface-pressed);
 
-[data-theme="graphite"] {
-	--color-surface-0: #1E1E1E;
-	--color-surface-1: #252526;
-	--color-surface-2: #2D2D2D;
-	--color-surface-3: #363636;
-	--color-surface-4: #3E3E3E;
-	--color-border: #333333;
-	--color-border-bright: #474747;
-	--color-border-focus: #D4915C;
-	--color-divider: #151515;
-	--color-text-primary: #E0E0E0;
-	--color-text-secondary: #8C8C8C;
-	--color-text-tertiary: #6B6B6B;
-	--color-accent: #D4915C;
-	--color-accent-hover: #E0A574;
-	--color-accent-fg: #FFFFFF;
-	--color-accent-2: #7A8F9C;
-	--color-accent-2-hover: #8FA3AF;
-	--color-accent-2-fg: #FFFFFF;
+	/* Accent mappings */
+	--color-accent: var(--color-action-brand);
+	--color-accent-hover: var(--color-action-brand-hover);
+	--color-accent-fg: var(--color-action-brand-text);
+	--color-accent-2: var(--color-purple-400);
+	--color-accent-2-hover: var(--color-purple-300);
+	--color-accent-2-fg: #ffffff;
+
+	/* Border mappings */
+	--color-border: var(--color-border-default);
+	--color-border-bright: var(--color-border-emphasis);
+	--color-border-focus: var(--color-orange-400);
+	--color-divider: var(--color-border-subtle);
+
+	/* Status mappings */
+	--color-status-blue: var(--color-blue-400);
+	--color-status-green: var(--color-status-success);
+	--color-status-orange: var(--color-orange-400);
+	--color-status-red: var(--color-status-error);
+	--color-status-purple: var(--color-purple-400);
+	--color-status-gold: var(--color-yellow-400);
+	--color-status-violet: var(--color-purple-500);
+	--color-status-rose: var(--color-pink-500);
+	--color-status-cyan: var(--color-teal-400);
+	--color-status-lime: var(--color-green-400);
 }
 
-[data-theme="midnight"] {
-	--color-surface-0: #121214;
-	--color-surface-1: #18181B;
-	--color-surface-2: #1F1F23;
-	--color-surface-3: #27272B;
-	--color-surface-4: #303034;
-	--color-border: #27272A;
-	--color-border-bright: #3B3B3F;
-	--color-border-focus: #6366F1;
-	--color-divider: #0A0A0C;
-	--color-text-primary: #E4E4E7;
-	--color-text-secondary: #8B8B94;
-	--color-text-tertiary: #6B6B74;
-	--color-accent: #6366F1;
-	--color-accent-hover: #818CF8;
-	--color-accent-fg: #FFFFFF;
-	--color-accent-2: #EC4899;
-	--color-accent-2-hover: #F472B6;
-	--color-accent-2-fg: #FFFFFF;
-}
-
-[data-theme="pitch"] {
-	--color-surface-0: #000000;
-	--color-surface-1: #0A0A0A;
-	--color-surface-2: #141414;
-	--color-surface-3: #1E1E1E;
-	--color-surface-4: #282828;
-	--color-border: #1C1C1C;
-	--color-border-bright: #333333;
-	--color-border-focus: #2DD4BF;
-	--color-divider: #000000;
-	--color-text-primary: #E4E4E4;
-	--color-text-secondary: #8A8A8A;
-	--color-text-tertiary: #666666;
-	--color-accent: #2DD4BF;
-	--color-accent-hover: #5EEAD4;
-	--color-accent-fg: #000000;
-	--color-accent-2: #6B7280;
-	--color-accent-2-hover: #9CA3AF;
-	--color-accent-2-fg: #FFFFFF;
-}
-
-[data-theme="solarized-dark"] {
-	--color-surface-0: #002B36;
-	--color-surface-1: #073642;
-	--color-surface-2: #0E3E4A;
-	--color-surface-3: #174652;
-	--color-surface-4: #1F4E5A;
-	--color-border: #0D4554;
-	--color-border-bright: #1A5B6B;
-	--color-border-focus: #268BD2;
-	--color-divider: #00222C;
-	--color-text-primary: #FDF6E3;
-	--color-text-secondary: #93A1A1;
-	--color-text-tertiary: #657B83;
-	--color-accent: #268BD2;
-	--color-accent-hover: #439EE0;
-	--color-accent-fg: #FFFFFF;
-	--color-accent-2: #2AA198;
-	--color-accent-2-hover: #3DBDB4;
-	--color-accent-2-fg: #FFFFFF;
-}
-
-/* --- Light themes ---------------------------------------------------- */
-
-[data-theme="light"] {
-	--color-surface-0: #FFFFFF;
-	--color-surface-1: #fefefe;
-	--color-surface-2: #fefefe;
-	--color-surface-3: #f3f3f3;
-	--color-surface-4: #CFD4DC;
-	--color-border: #CED5DE;
-	--color-border-bright: #B9BFC6;
-	--color-border-focus: #0084FF;
-	--color-divider: #ECF0F6;
-	--color-text-primary: #1F2328;
-	--color-text-secondary: #656D76;
-	--color-text-tertiary: #8C959F;
-	--color-accent: #0084FF;
-	--color-accent-hover: #0069CC;
-	--color-accent-fg: #FFFFFF;
-	--color-accent-2: #7C5CFF;
-	--color-accent-2-hover: #6344E0;
-	--color-accent-2-fg: #FFFFFF;
-}
-
-[data-theme="overcast"] {
-	--color-surface-0: #FFFFFF;
-	--color-surface-1: #fefefe;
-	--color-surface-2: #fefefe;
-	--color-surface-3: #f3f3f3;
-	--color-surface-4: #CFD4DC;
-	--color-border: #CACCD0;
-	--color-border-bright: #B6B8BC;
-	--color-border-focus: #0D9488;
-	--color-divider: #E2E4E8;
-	--color-text-primary: #1A1A1A;
-	--color-text-secondary: #5C5C5C;
-	--color-text-tertiary: #858585;
-	--color-accent: #0D9488;
-	--color-accent-hover: #0F766E;
-	--color-accent-fg: #FFFFFF;
-	--color-accent-2: #D97706;
-	--color-accent-2-hover: #B45309;
-	--color-accent-2-fg: #FFFFFF;
-}
-
-[data-theme="solarized-light"] {
-	--color-surface-0: #fdf6e3;
-	--color-surface-1: #fdf6e3;
-	--color-surface-2: #fdf6e3;
-	--color-surface-3:  #eee8d5;
-	--color-surface-4: #eee8d5;
-	--color-border: #D6CDB5;
-	--color-border-bright: #C5BC9E;
-	--color-border-focus: #4A7C96;
-	--color-divider: #F5EED8;
-	--color-text-primary: #073642;
-	--color-text-secondary: #586E75;
-	--color-text-tertiary: #93A1A1;
-	--color-accent: #3c8ab5;
-	--color-accent-hover: #3D6A82;
-	--color-accent-fg: #FFFFFF;
-	--color-accent-2: #347aac;
-	--color-accent-2-hover: #9093b7;
-	--color-accent-2-fg: #FFFFFF;
-}
-
-[data-theme="latte"] {
-	--color-surface-0: #FFFFFF;
-	--color-surface-1: #FEFEFE;
-	--color-surface-2: #fffefc;
-	--color-surface-3: #f7f3ef;
-	--color-surface-4: #EAE7E3;
-	--color-border: #E2DED8;
-	--color-border-bright: #D0CAC1;
-	--color-border-focus: #9C8878;
-	--color-divider: #F5F3F0;
-	--color-text-primary: #4A4240;
-	--color-text-secondary: #8A8280;
-	--color-text-tertiary: #ADA5A0;
-	--color-accent: #9C8878;
-	--color-accent-hover: #877060;
-	--color-accent-fg: #FFFFFF;
-	--color-accent-2: #7A8F9C;
-	--color-accent-2-hover: #6A7F8C;
-	--color-accent-2-fg: #FFFFFF;
-}
-
-/* --- High contrast --------------------------------------------------- */
-
-[data-theme="high-contrast-dark"] {
-	--color-surface-0: #000000;
-	--color-surface-1: #0A0A0A;
-	--color-surface-2: #1A1A1A;
-	--color-surface-3: #2A2A2A;
-	--color-surface-4: #3A3A3A;
-	--color-border: #6E6E6E;
-	--color-border-bright: #8E8E8E;
-	--color-border-focus: #FFFFFF;
-	--color-divider: #000000;
-	--color-text-primary: #FFFFFF;
-	--color-text-secondary: #CCCCCC;
-	--color-text-tertiary: #999999;
-	--color-accent: #FFFFFF;
-	--color-accent-hover: #E0E0E0;
-	--color-accent-fg: #000000;
-	--color-accent-2: #FF4081;
-	--color-accent-2-hover: #FF6699;
-	--color-accent-2-fg: #FFFFFF;
-}
-
-[data-theme="high-contrast-light"] {
-	--color-surface-0: #FFFFFF;
-	--color-surface-1: #FFFFFF;
-	--color-surface-2: #ffffff;
-	--color-surface-3: #fffafa;
-	--color-surface-4: #fffafa;
-	--color-border: #1A1A1A;
-	--color-border-bright: #000000;
-	--color-border-focus: #0050A0;
-	--color-divider: #1A1A1A;
-	--color-text-primary: #000000;
-	--color-text-secondary: #1A1A1A;
-	--color-text-tertiary: #404040;
-	--color-accent: #0050A0;
-	--color-accent-hover: #003D7A;
-	--color-accent-fg: #FFFFFF;
-	--color-accent-2: #B91C1C;
-	--color-accent-2-hover: #991B1B;
-	--color-accent-2-fg: #FFFFFF;
-}
-
+/* ============================================================================
+   BASE STYLES
+   ============================================================================ */
 
 html,
 body,
 #root {
 	height: 100%;
 	overflow: hidden;
-	background: var(--color-surface-0);
+	background: var(--color-bg-page);
 	color: var(--color-text-primary);
 }
 
+/* Open target icons (VSCode, Cursor, etc.) - invert in dark mode only */
+.kb-open-target-icon {
+	/* Default: no filter (works on light backgrounds) */
+}
 
-/* -- Shared layout -- */
+.dark .kb-open-target-icon,
+html.dark .kb-open-target-icon {
+	filter: brightness(0) invert(1);
+}
+
+/* ============================================================================
+   SHARED LAYOUT
+   ============================================================================ */
 
 .kb-board {
 	display: flex;
@@ -315,14 +463,14 @@ body,
 	padding: 6px;
 }
 
-
-
 .kb-board[data-programmatic-card-move="true"] [data-rfd-draggable-context-id],
 .kb-board[data-programmatic-card-move="true"] [data-rfd-placeholder-context-id] {
 	transition: none !important;
 }
 
-/* -- Scrollbars -- */
+/* ============================================================================
+   SCROLLBARS
+   ============================================================================ */
 
 * {
 	scrollbar-width: thin;
@@ -347,7 +495,9 @@ body,
 	background: var(--color-text-tertiary);
 }
 
-/* -- Card shell -- */
+/* ============================================================================
+   CARD SHELL
+   ============================================================================ */
 
 .kb-board-card-shell {
 	position: relative;
@@ -372,7 +522,9 @@ body,
 	box-shadow: inset 0 0 0 1px var(--color-accent);
 }
 
-/* -- Dependency overlay -- */
+/* ============================================================================
+   DEPENDENCY OVERLAY
+   ============================================================================ */
 
 .kb-dependency-overlay {
 	position: absolute;
@@ -445,7 +597,9 @@ body.kb-dependency-link-mode {
 	justify-content: center;
 }
 
-/* -- Navbar blended buttons -- */
+/* ============================================================================
+   NAVBAR BLENDED BUTTONS
+   ============================================================================ */
 
 .kb-navbar-btn {
 	background-color: var(--color-surface-1) !important;
@@ -459,7 +613,9 @@ body.kb-dependency-link-mode {
 	background-color: var(--color-surface-3) !important;
 }
 
-/* -- Shared UI patterns -- */
+/* ============================================================================
+   SHARED UI PATTERNS
+   ============================================================================ */
 
 .kb-status-banner {
 	padding: 8px 12px;
@@ -469,36 +625,38 @@ body.kb-dependency-link-mode {
 	margin-left: 8px;
 }
 
-/* -- Project navigation rows -- */
+/* ============================================================================
+   PROJECT NAVIGATION ROWS
+   ============================================================================ */
 
-.kb-project-row {
+.kb-project-row:hover {
+	background: var(--color-surface-2);
+}
+
+@media (hover: hover) {
+	.kb-project-row:hover .kb-project-row-actions {
+		opacity: 1;
+	}
 }
 
 .kb-project-row-actions {
 	opacity: 0;
 }
 
-@media (hover: hover) {
-	.kb-project-row:hover {
-		background: var(--color-surface-2);
-	}
-
-	.kb-project-row:hover .kb-project-row-actions {
-		opacity: 1;
-	}
-}
-
 .kb-project-row-selected,
 .kb-project-row-selected:hover {
-	background: var(--color-accent);
-	color: var(--color-accent-fg);
+	background: var(--color-bg-surface-raised);
+	color: var(--color-text-primary);
+	box-shadow: inset 2px 0 0 var(--color-accent);
 }
 
 .kb-project-count-tag {
 	font-size: 10px;
 }
 
-/* -- File tree rows -- */
+/* ============================================================================
+   FILE TREE ROWS
+   ============================================================================ */
 
 .kb-file-tree-row {
 	display: flex;
@@ -535,7 +693,9 @@ body.kb-dependency-link-mode {
 	color: var(--color-accent-fg);
 }
 
-/* -- Diff rows -- */
+/* ============================================================================
+   DIFF ROWS
+   ============================================================================ */
 
 .kb-diff-row {
 	display: grid;
@@ -552,11 +712,11 @@ body.kb-dependency-link-mode {
 }
 
 .kb-diff-row-added:hover {
-	background: rgba(63, 185, 80, 0.25);
+	background: rgba(0, 146, 147, 0.25);
 }
 
 .kb-diff-row-removed:hover {
-	background: rgba(248, 81, 73, 0.25);
+	background: rgba(244, 87, 46, 0.25);
 }
 
 .kb-diff-line-number {
@@ -606,19 +766,19 @@ body.kb-dependency-link-mode {
 }
 
 .kb-diff-row-commented.kb-diff-row-added {
-	background: rgba(63, 185, 80, 0.25);
+	background: rgba(0, 146, 147, 0.25);
 }
 
 .kb-diff-row-commented.kb-diff-row-removed {
-	background: rgba(248, 81, 73, 0.25);
+	background: rgba(244, 87, 46, 0.25);
 }
 
 .kb-diff-row-added {
-	background: rgba(63, 185, 80, 0.15);
+	background: rgba(0, 146, 147, 0.15);
 }
 
 .kb-diff-row-removed {
-	background: rgba(248, 81, 73, 0.15);
+	background: rgba(244, 87, 46, 0.15);
 }
 
 .kb-diff-row-context {
@@ -642,11 +802,11 @@ body.kb-dependency-link-mode {
 }
 
 .kb-diff-row-noncommentable.kb-diff-row-added:hover {
-	background: rgba(63, 185, 80, 0.2);
+	background: rgba(0, 146, 147, 0.2);
 }
 
 .kb-diff-row-noncommentable.kb-diff-row-removed:hover {
-	background: rgba(248, 81, 73, 0.2);
+	background: rgba(244, 87, 46, 0.2);
 }
 
 .kb-diff-split-grid-shell {
@@ -710,12 +870,12 @@ body.kb-dependency-link-mode {
 }
 
 .kb-diff-segment-added {
-	background: rgba(63, 185, 80, 0.3);
+	background: rgba(0, 146, 147, 0.3);
 	border-radius: 2px;
 }
 
 .kb-diff-segment-removed {
-	background: rgba(248, 81, 73, 0.3);
+	background: rgba(244, 87, 46, 0.3);
 	border-radius: 2px;
 }
 
@@ -760,7 +920,9 @@ body.kb-dependency-link-mode {
 	color: var(--color-text-secondary);
 }
 
-/* -- Diff entry -- */
+/* ============================================================================
+   DIFF ENTRY
+   ============================================================================ */
 
 .kb-diff-entry {
 	overflow-x: auto;
@@ -801,13 +963,17 @@ body.kb-dependency-link-mode {
 	font-size: 12px;
 }
 
-/* -- Focus ring -- */
+/* ============================================================================
+   FOCUS RING
+   ============================================================================ */
 
 :focus:not(:focus-visible) {
 	outline: none;
 }
 
-/* -- Utilities -- */
+/* ============================================================================
+   UTILITIES
+   ============================================================================ */
 
 .kb-line-clamp-1 {
 	overflow: hidden;
@@ -845,7 +1011,9 @@ body.kb-dependency-link-mode {
 	overflow-wrap: anywhere;
 }
 
-/* -- Read-only diff -- */
+/* ============================================================================
+   READ-ONLY DIFF
+   ============================================================================ */
 
 .kb-diff-readonly .kb-diff-row {
 	cursor: default;
@@ -857,12 +1025,12 @@ body.kb-dependency-link-mode {
 
 .kb-diff-readonly .kb-diff-row-added,
 .kb-diff-readonly .kb-diff-row-added:hover {
-	background: rgba(63, 185, 80, 0.15);
+	background: rgba(0, 146, 147, 0.15);
 }
 
 .kb-diff-readonly .kb-diff-row-removed,
 .kb-diff-readonly .kb-diff-row-removed:hover {
-	background: rgba(248, 81, 73, 0.15);
+	background: rgba(244, 87, 46, 0.15);
 }
 
 .kb-diff-readonly .kb-diff-row-context,
@@ -878,7 +1046,9 @@ body.kb-dependency-link-mode {
 	opacity: 1;
 }
 
-/* -- Git history rows -- */
+/* ============================================================================
+   GIT HISTORY ROWS
+   ============================================================================ */
 
 .kb-git-ref-row {
 	background: none;
@@ -901,12 +1071,12 @@ body.kb-dependency-link-mode {
 
 .kb-git-ref-row-selected-warning,
 .kb-git-ref-row-selected-warning:hover {
-	background: rgba(210, 153, 34, 0.2);
+	background: rgba(244, 87, 46, 0.2);
 	color: var(--color-text-primary);
 }
 
 .kb-git-working-copy-header {
-	background: rgba(210, 153, 34, 0.2);
+	background: rgba(244, 87, 46, 0.2);
 }
 
 .kb-git-commit-row {
@@ -930,7 +1100,9 @@ body.kb-dependency-link-mode {
 	color: var(--color-accent-fg) !important;
 }
 
-/* -- Terminal scrollbar -- */
+/* ============================================================================
+   TERMINAL SCROLLBAR
+   ============================================================================ */
 
 .kb-terminal-container .xterm .xterm-scrollable-element > .scrollbar.vertical {
 	width: 10px !important;
@@ -943,35 +1115,24 @@ body.kb-dependency-link-mode {
 	border-radius: 999px;
 }
 
-/* -- Terminal light-mode inversion --
-   Terminal renders dark internally so CLI agents output correct ANSI colors.
-   CSS filter inverts the xterm canvas, then a multiply-blend overlay tints
-   the resulting white bg to match the theme's actual surface color.
-   Multiply blend: white × surface = surface; dark × surface ≈ dark. */
+/* ============================================================================
+   TERMINAL LIGHT-MODE INVERSION
+   ============================================================================ */
 
-[data-theme="light"] .kb-terminal-container,
-[data-theme="overcast"] .kb-terminal-container,
-[data-theme="solarized-light"] .kb-terminal-container,
-[data-theme="latte"] .kb-terminal-container,
-[data-theme="high-contrast-light"] .kb-terminal-container {
+.light .kb-terminal-container,
+:root:has(.light) .kb-terminal-container {
 	background: var(--color-surface-0) !important;
 	position: relative;
 	isolation: isolate;
 }
 
-[data-theme="light"] .kb-terminal-container .xterm,
-[data-theme="overcast"] .kb-terminal-container .xterm,
-[data-theme="solarized-light"] .kb-terminal-container .xterm,
-[data-theme="latte"] .kb-terminal-container .xterm,
-[data-theme="high-contrast-light"] .kb-terminal-container .xterm {
+.light .kb-terminal-container .xterm,
+:root:has(.light) .kb-terminal-container .xterm {
 	filter: invert(1) hue-rotate(180deg);
 }
 
-[data-theme="light"] .kb-terminal-container::after,
-[data-theme="overcast"] .kb-terminal-container::after,
-[data-theme="solarized-light"] .kb-terminal-container::after,
-[data-theme="latte"] .kb-terminal-container::after,
-[data-theme="high-contrast-light"] .kb-terminal-container::after {
+.light .kb-terminal-container::after,
+:root:has(.light) .kb-terminal-container::after {
 	content: "";
 	position: absolute;
 	inset: 0;
@@ -981,7 +1142,9 @@ body.kb-dependency-link-mode {
 	z-index: 1;
 }
 
-/* -- Animations -- */
+/* ============================================================================
+   ANIMATIONS
+   ============================================================================ */
 
 @keyframes kb-overlay-show {
 	from { opacity: 0; }
@@ -1090,7 +1253,9 @@ body.kb-dependency-link-mode {
 	border-radius: var(--radius-sm);
 }
 
-/* -- Chat markdown -- */
+/* ============================================================================
+   CHAT MARKDOWN
+   ============================================================================ */
 
 .kb-markdown > * {
 	margin: 0;
@@ -1104,7 +1269,9 @@ body.kb-dependency-link-mode {
 	margin-top: 0.5em;
 }
 
-/* -- Mobile: prevent Safari auto-zoom on input focus -- */
+/* ============================================================================
+   MOBILE: PREVENT SAFARI AUTO-ZOOM
+   ============================================================================ */
 
 @media (max-width: 768px) {
 	input,
@@ -1114,7 +1281,9 @@ body.kb-dependency-link-mode {
 	}
 }
 
-/* -- Mobile board -- */
+/* ============================================================================
+   MOBILE BOARD
+   ============================================================================ */
 
 @media (max-width: 768px) {
 	.kb-board {
@@ -1157,7 +1326,9 @@ body.kb-dependency-link-mode {
 	}
 }
 
-/* -- Dialog (desktop + mobile) -- */
+/* ============================================================================
+   DIALOG (DESKTOP + MOBILE)
+   ============================================================================ */
 
 .kb-dialog-content {
 	transform: translate(-50%, -50%);
@@ -1181,11 +1352,9 @@ body.kb-dependency-link-mode {
 	}
 }
 
-/* -- PWA Window Controls Overlay --
-   When installed as a PWA with display_override: window-controls-overlay,
-   the title bar disappears and web content extends to the top of the window.
-   The traffic light buttons (macOS) are overlaid, so the navbar needs left
-   padding to avoid them, and drag regions so the window can be repositioned. */
+/* ============================================================================
+   PWA WINDOW CONTROLS OVERLAY
+   ============================================================================ */
 
 @media (display-mode: window-controls-overlay) {
 	.kb-top-bar {

@@ -14,6 +14,6 @@ export const TERMINAL_THEME_COLORS = {
 
 /** React hook that returns terminal colors matching the active theme. */
 export function useTerminalThemeColors(): ThemeTerminalColors {
-	const { themeId } = useTheme();
-	return useMemo(() => getTerminalThemeColors(themeId), [themeId]);
+	const { mode } = useTheme();
+	return useMemo(() => getTerminalThemeColors(mode), [mode]);
 }

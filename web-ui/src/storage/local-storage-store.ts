@@ -19,7 +19,9 @@ export enum LocalStorageKey {
 	PreferredOpenTarget = "kanban.preferred-open-target",
 	NotificationBadgeClearEvent = "kanban.notification-badge-clear.v1",
 	TabVisibilityPresence = "kanban.tab-visibility-presence.v1",
-	Theme = "kanban.theme",
+	Theme = "kanban.theme", // Legacy - kept for migration
+	ThemeMode = "kanban.theme.mode",
+	ThemeAccent = "kanban.theme.accent",
 }
 
 export const LAYOUT_CUSTOMIZATION_LOCAL_STORAGE_KEYS = [

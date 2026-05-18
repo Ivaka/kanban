@@ -206,11 +206,10 @@ export function ProjectNavigationPanel({
 	if (isCollapsed) {
 		return (
 			<aside
-				className="flex flex-col items-center min-h-0 overflow-hidden bg-surface-1 relative shrink-0 py-2 gap-1.5"
+				className="flex flex-col items-center min-h-0 overflow-hidden bg-surface-1 relative shrink-0 py-2 gap-1.5 border-r border-border-subtle"
 				style={{
 					width: collapsedWidth,
 					minWidth: collapsedWidth,
-					borderRight: "1px solid var(--color-divider)",
 				}}
 			>
 				{!isMobile && (
@@ -268,7 +267,7 @@ export function ProjectNavigationPanel({
 		<aside
 			className={cn(
 				"flex flex-col min-h-0 overflow-hidden bg-surface-1 shrink-0",
-				isMobile ? "fixed inset-y-0 left-0 z-50 shadow-2xl" : "relative",
+				isMobile ? "fixed inset-y-0 left-0 z-50 shadow-2xl" : "relative border-r border-border-subtle",
 			)}
 			onAnimationEnd={isMobileClosing ? handleMobileCloseAnimationEnd : undefined}
 			style={
@@ -283,7 +282,6 @@ export function ProjectNavigationPanel({
 							width: sidebarWidth,
 							minWidth: SIDEBAR_MIN_EXPANDED_WIDTH,
 							maxWidth: SIDEBAR_MAX_EXPANDED_WIDTH,
-							borderRight: "1px solid var(--color-divider)",
 						}
 			}
 		>
@@ -313,35 +311,34 @@ export function ProjectNavigationPanel({
 						/>
 					) : null}
 				</div>
-				<div className="mt-2 rounded-md bg-surface-2 border border-border p-1">
-					<div className="grid grid-cols-2 gap-1">
-						<button
-							type="button"
-							onClick={() => onActiveSectionChange("projects")}
-							className={cn(
-								"cursor-pointer rounded-sm px-2 py-1 text-xs font-medium",
-								activeSection === "projects"
-									? "bg-surface-4 text-text-primary border border-border"
-									: "text-text-secondary hover:text-text-primary border border-transparent",
-							)}
-						>
-							Projects
-						</button>
-						<button
-							type="button"
-							onClick={() => onActiveSectionChange("agent")}
-							disabled={!canShowAgentSection}
-							className={cn(
-								"cursor-pointer rounded-sm px-2 py-1 text-xs font-medium",
-								activeSection === "agent"
-									? "bg-surface-4 text-text-primary border border-border"
-									: "text-text-secondary hover:text-text-primary border border-transparent",
-								!canShowAgentSection ? "cursor-not-allowed opacity-50" : null,
-							)}
-						>
-							Kanban Agent
-						</button>
-					</div>
+				{/* Tabs - styled as button pills */}
+				<div className="mt-2 flex gap-2 px-1">
+					<button
+						type="button"
+						onClick={() => onActiveSectionChange("projects")}
+						className={cn(
+							"flex-1 inline-flex items-center justify-center rounded-md px-3 py-1.5 text-xs font-medium transition-all ease-out",
+							activeSection === "projects"
+								? "bg-bg-surface text-text-primary border border-border-default shadow-sm hover:border-border-emphasis"
+								: "bg-surface-2 text-text-secondary border border-transparent hover:bg-bg-tag hover:text-text-primary",
+						)}
+					>
+						Projects
+					</button>
+					<button
+						type="button"
+						onClick={() => onActiveSectionChange("agent")}
+						disabled={!canShowAgentSection}
+						className={cn(
+							"flex-1 inline-flex items-center justify-center rounded-md px-3 py-1.5 text-xs font-medium transition-all ease-out",
+							activeSection === "agent"
+								? "bg-bg-surface text-text-primary border border-border-default shadow-sm hover:border-border-emphasis"
+								: "bg-surface-2 text-text-secondary border border-transparent hover:bg-bg-tag hover:text-text-primary",
+							!canShowAgentSection ? "cursor-not-allowed opacity-50" : null,
+						)}
+					>
+						Kanban Agent
+					</button>
 				</div>
 			</div>
 
@@ -759,7 +756,7 @@ function ProjectRow({
 				<div
 					className={cn(
 						"font-medium whitespace-nowrap overflow-hidden text-ellipsis text-sm",
-						isCurrent ? "text-accent-fg" : "text-text-primary",
+						isCurrent ? "text-text-primary" : "text-text-primary",
 					)}
 				>
 					{project.name}
@@ -767,7 +764,7 @@ function ProjectRow({
 				<div
 					className={cn(
 						"font-mono text-[10px] whitespace-nowrap overflow-hidden text-ellipsis",
-						isCurrent ? "text-accent-fg/60" : "text-text-secondary",
+						isCurrent ? "text-text-secondary" : "text-text-secondary",
 					)}
 				>
 					{displayPath}
@@ -779,7 +776,7 @@ function ProjectRow({
 								key={badge.id}
 								className={cn(
 									"inline-flex items-center gap-1 rounded-full text-[10px] px-1.5 py-px font-medium",
-									isCurrent ? "bg-accent-fg/20 text-accent-fg" : badge.toneClassName,
+									isCurrent ? "bg-accent/15 text-accent" : badge.toneClassName,
 								)}
 								title={badge.title}
 							>
@@ -799,11 +796,7 @@ function ProjectRow({
 							size="sm"
 							icon={isRemovingProject ? <Spinner size={12} /> : <Ellipsis size={14} />}
 							disabled={hasAnyProjectRemoval && !isRemovingProject}
-							className={
-								isCurrent
-									? "text-accent-fg hover:bg-accent-fg/20 hover:text-accent-fg active:bg-accent-fg/30"
-									: undefined
-							}
+							className="text-text-tertiary hover:text-text-secondary hover:bg-surface-3"
 							onClick={(e) => {
 								e.stopPropagation();
 							}}

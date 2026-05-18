@@ -9,7 +9,7 @@ describe("createKanbanTerminalOptions", () => {
 			cursorColor: "#abcdef",
 			isMacPlatform: true,
 			terminalBackgroundColor: "#101112",
-			themeColors: getTerminalThemeColors("default"),
+			themeColors: getTerminalThemeColors("dark"),
 		});
 
 		expect(options.allowProposedApi).toBe(true);

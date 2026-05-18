@@ -74,8 +74,9 @@ describe("usePersistentTerminalSession", () => {
 		registerTerminalControllerMock.mockReturnValue(() => {});
 		ensurePersistentTerminalMock.mockImplementation(() => createPersistentTerminalMock());
 		window.localStorage.clear();
-		saveThemeId("default");
-		document.documentElement.removeAttribute("data-theme");
+		saveThemeId("dark");
+		document.documentElement.classList.remove("light", "dark");
+		document.documentElement.classList.add("dark");
 		previousActEnvironment = (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean })
 			.IS_REACT_ACT_ENVIRONMENT;
 		(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -90,8 +91,9 @@ describe("usePersistentTerminalSession", () => {
 		});
 		container.remove();
 		window.localStorage.clear();
-		saveThemeId("default");
-		document.documentElement.removeAttribute("data-theme");
+		saveThemeId("dark");
+		document.documentElement.classList.remove("light", "dark");
+		document.documentElement.classList.add("dark");
 		if (previousActEnvironment === undefined) {
 			delete (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT;
 		} else {
@@ -194,17 +196,17 @@ describe("usePersistentTerminalSession", () => {
 
 		expect(ensurePersistentTerminalMock).toHaveBeenCalledWith(
 			expect.objectContaining({
-				themeColors: getTerminalThemeColors("default"),
+				themeColors: getTerminalThemeColors("dark"),
 			}),
 		);
 
 		await act(async () => {
-			saveThemeId("graphite");
+			saveThemeId("light");
 		});
 
 		expect(ensurePersistentTerminalMock).toHaveBeenLastCalledWith(
 			expect.objectContaining({
-				themeColors: getTerminalThemeColors("graphite"),
+				themeColors: getTerminalThemeColors("light"),
 			}),
 		);
 	});
