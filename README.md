@@ -1,3 +1,5 @@
+## This repo has moved: https://github.com/castai/kimchi-studio
+
 ## npx kanban (Research Preview)
 
 <p align="center">
